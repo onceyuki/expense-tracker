@@ -5,6 +5,8 @@ import { config } from './config/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
+import incomeRoutes from './routes/incomeRoutes.js';
+import budgetRoutes from './routes/budgetRoutes.js';
 
 export function createApp() {
   const app = express();
@@ -19,6 +21,8 @@ export function createApp() {
 
   app.use('/api/auth', authRoutes);
   app.use('/api/expenses', expenseRoutes);
+  app.use('/api/income', incomeRoutes);
+  app.use('/api/budgets', budgetRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
