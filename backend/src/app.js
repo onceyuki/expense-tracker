@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import swaggerUi from 'swagger-ui-express';
+import { openApiSpec } from './config/openapi.js';
 import { config } from './config/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
@@ -27,6 +29,7 @@ export function createApp() {
   app.use('/api/budgets', budgetRoutes);
   app.use('/api', dashboardRoutes);
   app.use('/api/reports', reportRoutes);
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
   app.use(notFoundHandler);
   app.use(errorHandler);
