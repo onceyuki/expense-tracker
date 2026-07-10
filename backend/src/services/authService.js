@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/prisma.js';
 import { ApiError } from '../utils/ApiError.js';
 import { config } from '../config/index.js';
+import { seedDefaultCategories } from './categoryService.js';
 
 export function sanitizeUser(user) {
   const { password, ...safe } = user;
@@ -31,6 +32,7 @@ export async function register({ name, email, password }) {
   const user = await prisma.user.create({
     data: { name, email, password: await bcrypt.hash(password, 10) },
   });
+  await seedDefaultCategories(user.id);
   return sanitizeUser(user);
 }
 

@@ -1,5 +1,6 @@
 import { prisma } from '../utils/prisma.js';
 import { ApiError } from '../utils/ApiError.js';
+import { assertCategoryExists } from './categoryService.js';
 
 // Shared by list and export so exported files honor the active filters.
 export function buildWhere(userId, query) {
@@ -64,6 +65,7 @@ export async function getExpense(userId, id) {
 }
 
 export async function createExpense(userId, data) {
+  await assertCategoryExists(userId, data.category);
   return prisma.expense.create({
     data: { ...data, userId, date: new Date(data.date) },
   });
@@ -71,6 +73,7 @@ export async function createExpense(userId, data) {
 
 export async function updateExpense(userId, id, data) {
   await getExpense(userId, id);
+  await assertCategoryExists(userId, data.category);
   return prisma.expense.update({
     where: { id },
     data: { ...data, date: data.date ? new Date(data.date) : undefined },

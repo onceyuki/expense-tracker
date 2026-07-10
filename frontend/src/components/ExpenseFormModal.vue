@@ -1,8 +1,9 @@
 <script setup>
-import { reactive, ref, computed, watch } from 'vue';
+import { reactive, ref, computed, watch, onMounted } from 'vue';
 import { useUiStore } from '../stores/ui.js';
+import { useCategoriesStore } from '../stores/categories.js';
 import { apiErrorMessage } from '../services/api.js';
-import { CATEGORIES, PAYMENT_METHODS, toDateInput } from '../utils/format.js';
+import { PAYMENT_METHODS, toDateInput } from '../utils/format.js';
 import BaseModal from './ui/BaseModal.vue';
 import BaseInput from './ui/BaseInput.vue';
 import BaseSelect from './ui/BaseSelect.vue';
@@ -19,7 +20,10 @@ const props = defineProps({
 const emit = defineEmits(['close', 'saved']);
 
 const ui = useUiStore();
+const categories = useCategoriesStore();
 const DRAFT_KEY = 'et_expense_draft';
+
+onMounted(() => categories.ensureLoaded());
 
 const blank = () => ({
   title: '',
@@ -134,15 +138,24 @@ async function save() {
         required
         @blur="touched.date = true"
       />
-      <BaseSelect
-        v-model="form.category"
-        label="Category"
-        :options="CATEGORIES"
-        placeholder="Select a category"
-        :error="errors.category"
-        required
-        @blur="touched.category = true"
-      />
+      <div>
+        <BaseSelect
+          v-model="form.category"
+          label="Category"
+          :options="categories.names"
+          placeholder="Select a category"
+          :error="errors.category"
+          required
+          @blur="touched.category = true"
+        />
+        <RouterLink
+          v-if="categories.loaded && !categories.names.length"
+          to="/categories"
+          class="mt-1.5 inline-block text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400"
+        >
+          Add a category first →
+        </RouterLink>
+      </div>
       <BaseSelect
         v-model="form.paymentMethod"
         label="Payment method"

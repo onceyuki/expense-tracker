@@ -17,6 +17,7 @@ const nav = [
   { name: 'expenses', label: 'Expenses', icon: 'wallet', to: '/expenses' },
   { name: 'income', label: 'Income', icon: 'trending-up', to: '/income' },
   { name: 'budgets', label: 'Budgets', icon: 'target', to: '/budgets' },
+  { name: 'categories', label: 'Categories', icon: 'tag', to: '/categories' },
   { name: 'analytics', label: 'Analytics', icon: 'chart', to: '/analytics' },
 ];
 

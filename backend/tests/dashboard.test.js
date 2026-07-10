@@ -20,7 +20,7 @@ function daysAgo(n) {
 }
 
 beforeAll(async () => {
-  ({ token } = await createTestUser(app, 'dashboard@test.com'));
+  ({ token } = await createTestUser(app, 'dashboard@test.com', 'Test User', ['Food', 'Transportation']));
   const auth = (r) => r.set('Authorization', `Bearer ${token}`);
 
   // Fixture: current month — 1000 income, 200 Food today, 100 Transportation 3 days ago

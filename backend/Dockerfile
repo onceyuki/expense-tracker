@@ -1,5 +1,9 @@
 FROM node:20-alpine
 
+# Alpine ships without OpenSSL; Prisma's engine binaries need libssl at runtime
+# or they crash before printing valid JSON ("Could not parse schema engine response").
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 COPY package*.json ./

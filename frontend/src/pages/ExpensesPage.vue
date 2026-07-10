@@ -2,8 +2,9 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useExpensesStore } from '../stores/expenses.js';
 import { useUiStore } from '../stores/ui.js';
+import { useCategoriesStore } from '../stores/categories.js';
 import { apiErrorMessage } from '../services/api.js';
-import { formatMoney, formatDate, CATEGORY_STYLES } from '../utils/format.js';
+import { formatMoney, formatDate, categoryChipStyle } from '../utils/format.js';
 import { useDebounce } from '../composables/useDebounce.js';
 import BaseCard from '../components/ui/BaseCard.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
@@ -18,6 +19,7 @@ import BaseModal from '../components/ui/BaseModal.vue';
 
 const store = useExpensesStore();
 const ui = useUiStore();
+const categories = useCategoriesStore();
 
 const formOpen = ref(false);
 const editing = ref(null);
@@ -99,6 +101,7 @@ function onKeydown(event) {
 
 onMounted(() => {
   store.fetch();
+  categories.ensureLoaded();
   document.addEventListener('keydown', onKeydown);
 });
 onUnmounted(() => document.removeEventListener('keydown', onKeydown));
@@ -162,7 +165,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
             <span class="font-semibold">{{ value }}</span>
           </template>
           <template #cell-category="{ value }">
-            <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="CATEGORY_STYLES[value]">
+            <span class="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold" :style="categoryChipStyle(categories.colorOf(value))">
               {{ value }}
             </span>
           </template>
@@ -246,7 +249,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
         </div>
         <div class="flex justify-between gap-4">
           <dt class="font-semibold text-slate-500">Category</dt>
-          <dd><span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="CATEGORY_STYLES[viewing.category]">{{ viewing.category }}</span></dd>
+          <dd><span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :style="categoryChipStyle(categories.colorOf(viewing.category))">{{ viewing.category }}</span></dd>
         </div>
         <div class="flex justify-between gap-4">
           <dt class="font-semibold text-slate-500">Payment method</dt>

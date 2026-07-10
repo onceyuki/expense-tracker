@@ -2,8 +2,9 @@
 import { onMounted, ref, reactive, computed, watch } from 'vue';
 import { useBudgetsStore } from '../stores/budgets.js';
 import { useUiStore } from '../stores/ui.js';
+import { useCategoriesStore } from '../stores/categories.js';
 import { apiErrorMessage } from '../services/api.js';
-import { formatMoney, formatMonth, CATEGORIES, CATEGORY_STYLES } from '../utils/format.js';
+import { formatMoney, formatMonth, categoryChipStyle } from '../utils/format.js';
 import BaseCard from '../components/ui/BaseCard.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseInput from '../components/ui/BaseInput.vue';
@@ -16,6 +17,7 @@ import Icon from '../components/ui/Icon.vue';
 
 const store = useBudgetsStore();
 const ui = useUiStore();
+const categories = useCategoriesStore();
 
 const formOpen = ref(false);
 const editing = ref(null);
@@ -27,7 +29,7 @@ const touched = reactive({});
 // Categories that don't have a budget yet this month (for the create form)
 const availableCategories = computed(() => {
   const used = new Set(store.byCategory.map((b) => b.category));
-  return CATEGORIES.filter((c) => !used.has(c));
+  return categories.names.filter((c) => !used.has(c));
 });
 
 const errors = computed(() => ({
@@ -101,7 +103,10 @@ function shiftMonth(delta) {
   store.setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
 }
 
-onMounted(() => store.fetch());
+onMounted(() => {
+  store.fetch();
+  categories.ensureLoaded();
+});
 </script>
 
 <template>
@@ -171,7 +176,7 @@ onMounted(() => store.fetch());
       <div v-if="store.byCategory.length" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <BaseCard v-for="budget in store.byCategory" :key="budget.id">
           <div class="flex items-center justify-between">
-            <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="CATEGORY_STYLES[budget.category]">
+            <span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :style="categoryChipStyle(categories.colorOf(budget.category))">
               {{ budget.category }}
             </span>
             <div class="flex gap-1">

@@ -23,37 +23,11 @@ Chart.register(
   Filler,
 );
 
-// Fixed identity mapping (color follows the category, never its rank).
-// Palette validated with the dataviz six-checks validator for both surfaces;
-// weak adjacent pairs are relieved by slice gaps, legend and tooltips.
-export const CATEGORY_COLORS = {
-  light: {
-    Food: '#eda100',
-    Transportation: '#2a78d6',
-    Shopping: '#e87ba4',
-    Utilities: '#1baf7a',
-    Rent: '#4a3aa7',
-    Entertainment: '#eb6834',
-    Health: '#e34948',
-    Education: '#008300',
-    Bills: '#0891b2',
-    Travel: '#4d7c0f',
-    Other: '#64748b',
-  },
-  dark: {
-    Food: '#c98500',
-    Transportation: '#3987e5',
-    Shopping: '#d55181',
-    Utilities: '#199e70',
-    Rent: '#9085e9',
-    Entertainment: '#d95926',
-    Health: '#e66767',
-    Education: '#008300',
-    Bills: '#22d3ee',
-    Travel: '#a3e635',
-    Other: '#94a3b8',
-  },
-};
+// Categories are user-defined (see stores/categories.js) and each carries its own hex
+// color, so chart slices use that directly. This is only the color for the synthetic
+// "Other" slice that foldCategories() creates for long tails, and the fallback if a
+// category somehow has no color on record.
+export const OTHER_SLICE_COLOR = { light: '#64748b', dark: '#94a3b8' };
 
 // Semantic series colors (income/positive vs expense/negative)
 export const SERIES = {
@@ -82,7 +56,7 @@ export function chartInk(dark) {
   };
 }
 
-const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const moneyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'PHP' });
 
 export function baseOptions(dark, { money = true, legend = false } = {}) {
   const { ink, muted, grid } = chartInk(dark);

@@ -23,7 +23,7 @@ function binary(req) {
 }
 
 beforeAll(async () => {
-  ({ token } = await createTestUser(app, 'reports@test.com'));
+  ({ token } = await createTestUser(app, 'reports@test.com', 'Test User', ['Rent']));
   const auth = (r) => r.set('Authorization', `Bearer ${token}`);
   await auth(request(app).post('/api/income')).send({
     source: 'Salary',

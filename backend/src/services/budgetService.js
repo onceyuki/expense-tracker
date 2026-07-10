@@ -1,5 +1,6 @@
 import { prisma } from '../utils/prisma.js';
 import { ApiError } from '../utils/ApiError.js';
+import { assertCategoryExists } from './categoryService.js';
 
 export function monthRange(month) {
   const [year, m] = month.split('-').map(Number);
@@ -38,6 +39,7 @@ function round2(n) {
 }
 
 export async function createBudget(userId, { category, limit, month }) {
+  await assertCategoryExists(userId, category ?? null);
   const existing = await prisma.budget.findFirst({
     where: { userId, category: category ?? null, month },
   });
@@ -50,6 +52,7 @@ export async function createBudget(userId, { category, limit, month }) {
 export async function updateBudget(userId, id, data) {
   const budget = await prisma.budget.findFirst({ where: { id, userId } });
   if (!budget) throw new ApiError(404, 'Budget not found');
+  if (data.category !== undefined) await assertCategoryExists(userId, data.category);
   return prisma.budget.update({ where: { id }, data });
 }
 

@@ -12,7 +12,7 @@ function post(body) {
 }
 
 beforeAll(async () => {
-  ({ token } = await createTestUser(app, 'budgets@test.com'));
+  ({ token } = await createTestUser(app, 'budgets@test.com', 'Test User', ['Food', 'Travel']));
   // spending fixture: 300 Food in July
   await request(app).post('/api/expenses').set('Authorization', `Bearer ${token}`).send({
     title: 'Big shop',

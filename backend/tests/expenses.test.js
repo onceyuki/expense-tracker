@@ -21,7 +21,9 @@ const base = {
 };
 
 beforeAll(async () => {
-  ({ token } = await createTestUser(app, 'expenses@test.com'));
+  ({ token } = await createTestUser(app, 'expenses@test.com', 'Test User', [
+    'Food', 'Transportation', 'Entertainment', 'Utilities', 'Shopping',
+  ]));
   ({ token: otherToken } = await createTestUser(app, 'expenses-other@test.com'));
 });
 

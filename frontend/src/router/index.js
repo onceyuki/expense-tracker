@@ -23,6 +23,7 @@ const routes = [
       { path: 'expenses', name: 'expenses', component: () => import('../pages/ExpensesPage.vue'), meta: { title: 'Expenses' } },
       { path: 'income', name: 'income', component: () => import('../pages/IncomePage.vue'), meta: { title: 'Income' } },
       { path: 'budgets', name: 'budgets', component: () => import('../pages/BudgetsPage.vue'), meta: { title: 'Budgets' } },
+      { path: 'categories', name: 'categories', component: () => import('../pages/CategoriesPage.vue'), meta: { title: 'Categories' } },
       { path: 'analytics', name: 'analytics', component: () => import('../pages/AnalyticsPage.vue'), meta: { title: 'Analytics' } },
       { path: 'profile', name: 'profile', component: () => import('../pages/ProfilePage.vue'), meta: { title: 'Profile' } },
     ],

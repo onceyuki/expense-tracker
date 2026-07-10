@@ -3,10 +3,21 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-const CATEGORIES = [
-  'Food', 'Transportation', 'Shopping', 'Utilities', 'Rent',
-  'Entertainment', 'Health', 'Education', 'Bills', 'Travel', 'Other',
+// Name + chart color for each demo category (colors match the dashboard's chart palette)
+const CATEGORY_DEFS = [
+  { name: 'Food', color: '#eda100' },
+  { name: 'Transportation', color: '#2a78d6' },
+  { name: 'Shopping', color: '#e87ba4' },
+  { name: 'Utilities', color: '#1baf7a' },
+  { name: 'Rent', color: '#4a3aa7' },
+  { name: 'Entertainment', color: '#eb6834' },
+  { name: 'Health', color: '#e34948' },
+  { name: 'Education', color: '#008300' },
+  { name: 'Bills', color: '#0891b2' },
+  { name: 'Travel', color: '#4d7c0f' },
+  { name: 'Other', color: '#64748b' },
 ];
+const CATEGORIES = CATEGORY_DEFS.map((c) => c.name);
 const PAYMENT_METHODS = ['Cash', 'Credit Card', 'Debit Card', 'Bank Transfer', 'Mobile Payment'];
 
 const EXPENSE_TITLES = {
@@ -50,6 +61,10 @@ async function main() {
       email,
       password: await bcrypt.hash('Password123!', 10),
     },
+  });
+
+  await prisma.category.createMany({
+    data: CATEGORY_DEFS.map((c) => ({ userId: user.id, name: c.name, color: c.color })),
   });
 
   const now = new Date();

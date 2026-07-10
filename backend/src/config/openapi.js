@@ -1,4 +1,4 @@
-import { CATEGORIES, PAYMENT_METHODS } from '../utils/constants.js';
+import { PAYMENT_METHODS } from '../utils/constants.js';
 
 const bearerAuth = [{ bearerAuth: [] }];
 
@@ -9,7 +9,7 @@ const paginationParams = [
 
 const expenseFilterParams = [
   { name: 'search', in: 'query', schema: { type: 'string' } },
-  { name: 'category', in: 'query', schema: { type: 'string', enum: CATEGORIES } },
+  { name: 'category', in: 'query', schema: { type: 'string' } },
   { name: 'paymentMethod', in: 'query', schema: { type: 'string', enum: PAYMENT_METHODS } },
   { name: 'dateFrom', in: 'query', schema: { type: 'string', format: 'date' } },
   { name: 'dateTo', in: 'query', schema: { type: 'string', format: 'date' } },
@@ -66,7 +66,7 @@ export const openApiSpec = {
           userId: { type: 'string' },
           title: { type: 'string' },
           amount: { type: 'number' },
-          category: { type: 'string', enum: CATEGORIES },
+          category: { type: 'string', description: 'One of the user\'s categories, see GET /api/categories' },
           paymentMethod: { type: 'string', enum: PAYMENT_METHODS },
           notes: { type: 'string', nullable: true },
           date: { type: 'string', format: 'date-time' },
@@ -80,10 +80,27 @@ export const openApiSpec = {
         properties: {
           title: { type: 'string' },
           amount: { type: 'number', minimum: 0.01 },
-          category: { type: 'string', enum: CATEGORIES },
+          category: { type: 'string', description: 'One of the user\'s categories, see GET /api/categories' },
           paymentMethod: { type: 'string', enum: PAYMENT_METHODS },
           notes: { type: 'string', nullable: true },
           date: { type: 'string', example: '2026-07-01' },
+        },
+      },
+      Category: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          color: { type: 'string', example: '#2a78d6' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      CategoryInput: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: { type: 'string', maxLength: 40 },
+          color: { type: 'string', example: '#2a78d6' },
         },
       },
       Income: {
@@ -297,7 +314,7 @@ export const openApiSpec = {
                 type: 'object',
                 required: ['limit', 'month'],
                 properties: {
-                  category: { type: 'string', enum: CATEGORIES, nullable: true },
+                  category: { type: 'string', nullable: true, description: 'One of the user\'s categories, or omit/null for the overall budget' },
                   limit: { type: 'number', minimum: 0.01 },
                   month: { type: 'string', example: '2026-07' },
                 },
@@ -311,6 +328,37 @@ export const openApiSpec = {
     '/api/budgets/{id}': {
       put: { summary: 'Update budget', security: bearerAuth, parameters: [idParam], responses: ok('Updated budget') },
       delete: { summary: 'Delete budget', security: bearerAuth, parameters: [idParam], responses: { 204: { description: 'Deleted' } } },
+    },
+    '/api/categories': {
+      get: {
+        summary: "List the user's categories",
+        security: bearerAuth,
+        responses: ok('Categories', { type: 'array', items: { $ref: '#/components/schemas/Category' } }),
+      },
+      post: {
+        summary: 'Create a category (color auto-assigned if omitted)',
+        security: bearerAuth,
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/CategoryInput' } } },
+        },
+        responses: { 201: { description: 'Created category' }, 409: { description: 'Name already in use' } },
+      },
+    },
+    '/api/categories/{id}': {
+      put: {
+        summary: 'Rename or recolor a category (renaming updates existing expenses/budgets)',
+        security: bearerAuth,
+        parameters: [idParam],
+        requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/CategoryInput' } } } },
+        responses: ok('Updated category'),
+      },
+      delete: {
+        summary: 'Delete a category',
+        security: bearerAuth,
+        parameters: [idParam],
+        responses: { 204: { description: 'Deleted' }, 409: { description: 'Still in use by expenses or budgets' } },
+      },
     },
     '/api/dashboard': {
       get: {

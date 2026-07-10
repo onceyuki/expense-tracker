@@ -1,6 +1,8 @@
 services:
   db:
     image: postgres:16-alpine
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: expense
       POSTGRES_PASSWORD: expense
@@ -19,21 +21,21 @@ services:
       DATABASE_URL: postgresql://expense:expense@db:5432/expense_tracker
       JWT_SECRET: change-me-in-production
       JWT_REFRESH_SECRET: change-me-too-in-production
-      PORT: "4000"
-      CLIENT_ORIGIN: http://localhost:8080
+      PORT: "4002"
+      CLIENT_ORIGIN: http://localhost:8081
       NODE_ENV: production
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "4000:4000"
+      - "4002:4002"
 
   frontend:
     build: ./frontend
     depends_on:
       - backend
     ports:
-      - "8080:80"
+      - "8081:80"
 
 volumes:
   pgdata:
