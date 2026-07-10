@@ -70,12 +70,12 @@ onMounted(load);
 
     <!-- Stat cards -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      <StatCard label="Total income" :value="d?.totals.income" icon="trending-up" tone="positive" :loading="dashboard.loading" :hint="`Savings rate ${d?.stats.savingsRate ?? 0}%`" />
-      <StatCard label="Total expenses" :value="d?.totals.expenses" icon="wallet" tone="negative" :loading="dashboard.loading" :hint="`Avg ${formatMoney(d?.stats.avgDailySpending)} / day`" />
-      <StatCard label="Savings" :value="d?.totals.savings" icon="target" :tone="(d?.totals.savings ?? 0) >= 0 ? 'positive' : 'negative'" :loading="dashboard.loading" hint="Income minus expenses" />
-      <StatCard label="Monthly budget" :value="d?.totals.monthlyBudget" icon="calendar" :loading="dashboard.loading" hint="Overall limit for this month" />
-      <StatCard label="Remaining budget" :value="d?.totals.remainingBudget" icon="check" :tone="(d?.totals.remainingBudget ?? 0) >= 0 ? 'neutral' : 'negative'" :loading="dashboard.loading" />
-      <StatCard label="Current balance" :value="d?.totals.balance" icon="chart" :tone="(d?.totals.balance ?? 0) >= 0 ? 'positive' : 'negative'" :loading="dashboard.loading" hint="All-time income minus expenses" />
+      <StatCard label="Total income" :value="d?.totals.income" icon="trending-up" tone="positive" :loading="dashboard.loading || !d" :hint="`Savings rate ${d?.stats.savingsRate ?? 0}%`" />
+      <StatCard label="Total expenses" :value="d?.totals.expenses" icon="wallet" tone="negative" :loading="dashboard.loading || !d" :hint="`Avg ${formatMoney(d?.stats.avgDailySpending)} / day`" />
+      <StatCard label="Savings" :value="d?.totals.savings" icon="target" :tone="(d?.totals.savings ?? 0) >= 0 ? 'positive' : 'negative'" :loading="dashboard.loading || !d" hint="Income minus expenses" />
+      <StatCard label="Monthly budget" :value="d?.totals.monthlyBudget" icon="calendar" :loading="dashboard.loading || !d" hint="Overall limit for this month" />
+      <StatCard label="Remaining budget" :value="d?.totals.remainingBudget" icon="check" :tone="(d?.totals.remainingBudget ?? 0) >= 0 ? 'neutral' : 'negative'" :loading="dashboard.loading || !d" />
+      <StatCard label="Current balance" :value="d?.totals.balance" icon="chart" :tone="(d?.totals.balance ?? 0) >= 0 ? 'positive' : 'negative'" :loading="dashboard.loading || !d" hint="All-time income minus expenses" />
     </div>
 
     <!-- Secondary stats strip -->
@@ -101,13 +101,13 @@ onMounted(load);
     <!-- Charts -->
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <BaseCard title="Expenses by category">
-        <SkeletonLoader v-if="dashboard.loading" variant="card" />
+        <SkeletonLoader v-if="dashboard.loading || !d" variant="card" />
         <DoughnutChart v-else-if="hasExpenses" :data="d.charts.byCategory" :height="260" />
         <EmptyState v-else title="No expenses yet" message="Add your first expense to see where your money goes." />
       </BaseCard>
 
       <BaseCard title="Monthly expenses">
-        <SkeletonLoader v-if="dashboard.loading" variant="card" />
+        <SkeletonLoader v-if="dashboard.loading || !d" variant="card" />
         <LineChart
           v-else
           :labels="monthLabels"
@@ -117,7 +117,7 @@ onMounted(load);
       </BaseCard>
 
       <BaseCard title="Income vs expenses">
-        <SkeletonLoader v-if="dashboard.loading" variant="card" />
+        <SkeletonLoader v-if="dashboard.loading || !d" variant="card" />
         <BarChart
           v-else
           :labels="monthLabels"
@@ -130,7 +130,7 @@ onMounted(load);
       </BaseCard>
 
       <BaseCard title="Weekly spending">
-        <SkeletonLoader v-if="dashboard.loading" variant="card" />
+        <SkeletonLoader v-if="dashboard.loading || !d" variant="card" />
         <BarChart
           v-else
           :labels="d.charts.weeklySpending.map((day) => day.day)"
@@ -143,7 +143,7 @@ onMounted(load);
     <!-- Bottom row: top categories + recent activity -->
     <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <BaseCard title="Top spending categories">
-        <SkeletonLoader v-if="dashboard.loading" :count="5" />
+        <SkeletonLoader v-if="dashboard.loading || !d" :count="5" />
         <ul v-else-if="d.stats.topCategories.length" class="divide-y divide-slate-100 dark:divide-slate-800">
           <li v-for="(cat, i) in d.stats.topCategories" :key="cat.category" class="flex items-center gap-3 py-2.5">
             <span class="w-5 text-xs font-bold text-slate-400">{{ i + 1 }}</span>
@@ -155,7 +155,7 @@ onMounted(load);
       </BaseCard>
 
       <BaseCard title="Recent activity">
-        <SkeletonLoader v-if="dashboard.loading" :count="5" />
+        <SkeletonLoader v-if="dashboard.loading || !d" :count="5" />
         <ul v-else-if="d.recentActivity.length" class="divide-y divide-slate-100 dark:divide-slate-800">
           <li v-for="item in d.recentActivity.slice(0, 6)" :key="`${item.type}-${item.id}`" class="flex items-center gap-3 py-2.5">
             <span
