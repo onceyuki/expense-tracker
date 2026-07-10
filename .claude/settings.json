@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(npm test)"
+      "PowerShell(npm test)",
+      "Skill(dataviz)",
+      "Skill(dataviz:*)"
     ]
   }
 }
