@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import { config } from './config/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import authRoutes from './routes/authRoutes.js';
+import expenseRoutes from './routes/expenseRoutes.js';
 
 export function createApp() {
   const app = express();
@@ -17,6 +18,7 @@ export function createApp() {
   });
 
   app.use('/api/auth', authRoutes);
+  app.use('/api/expenses', expenseRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
