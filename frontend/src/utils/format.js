@@ -1,6 +1,6 @@
 const currencyFmt = new Intl.NumberFormat('en-US', {
   style: 'currency',
-  currency: 'USD',
+  currency: 'PHP',
 });
 
 export function formatMoney(value) {
@@ -33,8 +33,9 @@ export function toDateInput(value) {
 }
 
 export const CATEGORIES = [
-  'Food', 'Transportation', 'Shopping', 'Utilities', 'Rent',
-  'Entertainment', 'Health', 'Education', 'Bills', 'Travel', 'Other',
+  // 'Food', 'Transportation', 'Shopping', 'Utilities', 'Rent',
+  // 'Entertainment', 'Health', 'Education', 'Bills', 'Travel', 'Other',
+  'Wants', 'Needs', 'Savings'
 ];
 
 export const PAYMENT_METHODS = [
@@ -43,7 +44,9 @@ export const PAYMENT_METHODS = [
 
 // Tinted chip styles per category (light + dark)
 export const CATEGORY_STYLES = {
-  Food: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
+  Wants: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300',
+  Needs: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
+  Savings: 'bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-500/15 dark:text-fuchsia-300',
   Transportation: 'bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300',
   Shopping: 'bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-500/15 dark:text-fuchsia-300',
   Utilities: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-500/15 dark:text-cyan-300',

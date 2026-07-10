@@ -1,15 +1,16 @@
 export const CATEGORIES = [
-  'Food',
-  'Transportation',
-  'Shopping',
-  'Utilities',
-  'Rent',
-  'Entertainment',
-  'Health',
-  'Education',
-  'Bills',
-  'Travel',
-  'Other',
+  // 'Food',
+  // 'Transportation',
+  // 'Shopping',
+  // 'Utilities',
+  // 'Rent',
+  // 'Entertainment',
+  // 'Health',
+  // 'Education',
+  // 'Bills',
+  // 'Travel',
+  // 'Other',
+  'Wants', 'Needs', 'Savings'
 ];
 
 export const PAYMENT_METHODS = [
