@@ -2,8 +2,9 @@
 import { reactive, ref, computed, watch, onMounted } from 'vue';
 import { useUiStore } from '../stores/ui.js';
 import { useCategoriesStore } from '../stores/categories.js';
+import { useWalletsStore } from '../stores/wallets.js';
 import { apiErrorMessage } from '../services/api.js';
-import { PAYMENT_METHODS, toDateInput } from '../utils/format.js';
+import { toDateInput } from '../utils/format.js';
 import BaseModal from './ui/BaseModal.vue';
 import BaseInput from './ui/BaseInput.vue';
 import BaseSelect from './ui/BaseSelect.vue';
@@ -21,16 +22,20 @@ const emit = defineEmits(['close', 'saved']);
 
 const ui = useUiStore();
 const categories = useCategoriesStore();
+const wallets = useWalletsStore();
 const DRAFT_KEY = 'et_expense_draft';
 
-onMounted(() => categories.ensureLoaded());
+onMounted(() => {
+  categories.ensureLoaded();
+  wallets.ensureLoaded();
+});
 
 const blank = () => ({
   title: '',
   amount: '',
   date: toDateInput(),
   category: '',
-  paymentMethod: '',
+  walletId: '',
   notes: '',
 });
 
@@ -50,7 +55,7 @@ watch(
         amount: props.expense.amount,
         date: toDateInput(props.expense.date),
         category: props.expense.category,
-        paymentMethod: props.expense.paymentMethod,
+        walletId: props.expense.walletId ?? '',
         notes: props.expense.notes ?? '',
       });
     } else {
@@ -77,11 +82,10 @@ const errors = computed(() => ({
   amount: touched.amount && (!form.amount || Number(form.amount) <= 0) ? 'Enter an amount above zero' : '',
   date: touched.date && !form.date ? 'Pick a date' : '',
   category: touched.category && !form.category ? 'Pick a category' : '',
-  paymentMethod: touched.paymentMethod && !form.paymentMethod ? 'Pick a payment method' : '',
 }));
 
 async function save() {
-  ['title', 'amount', 'date', 'category', 'paymentMethod'].forEach((k) => (touched[k] = true));
+  ['title', 'amount', 'date', 'category'].forEach((k) => (touched[k] = true));
   if (Object.values(errors.value).some(Boolean)) return;
 
   saving.value = true;
@@ -91,7 +95,7 @@ async function save() {
       amount: Number(form.amount),
       date: form.date,
       category: form.category,
-      paymentMethod: form.paymentMethod,
+      walletId: form.walletId || null,
       notes: form.notes.trim() || null,
     });
     if (!isEdit.value) localStorage.removeItem(DRAFT_KEY);
@@ -157,13 +161,10 @@ async function save() {
         </RouterLink>
       </div>
       <BaseSelect
-        v-model="form.paymentMethod"
-        label="Payment method"
-        :options="PAYMENT_METHODS"
-        placeholder="Select a method"
-        :error="errors.paymentMethod"
-        required
-        @blur="touched.paymentMethod = true"
+        v-model="form.walletId"
+        label="Wallet"
+        :options="wallets.options"
+        placeholder="No wallet"
       />
       <div class="sm:col-span-2">
         <label class="block">

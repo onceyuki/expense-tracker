@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref, reactive, computed, watch } from 'vue';
 import { useIncomeStore } from '../stores/income.js';
+import { useWalletsStore } from '../stores/wallets.js';
 import { useUiStore } from '../stores/ui.js';
 import { apiErrorMessage } from '../services/api.js';
 import { formatMoney, formatDate, toDateInput } from '../utils/format.js';
@@ -9,6 +10,7 @@ import BaseCard from '../components/ui/BaseCard.vue';
 import BaseButton from '../components/ui/BaseButton.vue';
 import BaseInput from '../components/ui/BaseInput.vue';
 import BaseModal from '../components/ui/BaseModal.vue';
+import BaseSelect from '../components/ui/BaseSelect.vue';
 import DataTable from '../components/ui/DataTable.vue';
 import PaginationBar from '../components/ui/PaginationBar.vue';
 import SkeletonLoader from '../components/ui/SkeletonLoader.vue';
@@ -16,6 +18,7 @@ import EmptyState from '../components/ui/EmptyState.vue';
 import Icon from '../components/ui/Icon.vue';
 
 const store = useIncomeStore();
+const wallets = useWalletsStore();
 const ui = useUiStore();
 
 const formOpen = ref(false);
@@ -25,12 +28,13 @@ const saving = ref(false);
 const columns = [
   { key: 'date', label: 'Date' },
   { key: 'source', label: 'Source' },
+  { key: 'wallet', label: 'Wallet' },
   { key: 'amount', label: 'Amount', align: 'right', class: 'amount font-semibold text-brand-600 dark:text-brand-400' },
   { key: 'notes', label: 'Notes', class: 'max-w-[200px] truncate text-slate-500' },
   { key: 'actions', label: '', align: 'right' },
 ];
 
-const form = reactive({ source: '', amount: '', date: toDateInput(), notes: '' });
+const form = reactive({ source: '', amount: '', date: toDateInput(), walletId: '', notes: '' });
 const touched = reactive({});
 
 const errors = computed(() => ({
@@ -47,10 +51,11 @@ watch(formOpen, (open) => {
       source: editing.value.source,
       amount: editing.value.amount,
       date: toDateInput(editing.value.date),
+      walletId: editing.value.walletId ?? '',
       notes: editing.value.notes ?? '',
     });
   } else {
-    Object.assign(form, { source: '', amount: '', date: toDateInput(), notes: '' });
+    Object.assign(form, { source: '', amount: '', date: toDateInput(), walletId: '', notes: '' });
   }
 });
 
@@ -75,6 +80,7 @@ async function save() {
     source: form.source.trim(),
     amount: Number(form.amount),
     date: form.date,
+    walletId: form.walletId || null,
     notes: form.notes.trim() || null,
   };
   try {
@@ -109,7 +115,10 @@ async function confirmDelete(income) {
   }
 }
 
-onMounted(() => store.fetch());
+onMounted(() => {
+  store.fetch();
+  wallets.ensureLoaded();
+});
 </script>
 
 <template>
@@ -142,6 +151,7 @@ onMounted(() => store.fetch());
           <template #cell-source="{ value }">
             <span class="font-semibold">{{ value }}</span>
           </template>
+          <template #cell-wallet="{ row }">{{ row.wallet?.name ?? '—' }}</template>
           <template #cell-amount="{ value }">+{{ formatMoney(value) }}</template>
           <template #cell-notes="{ value }">{{ value || '—' }}</template>
           <template #cell-actions="{ row }">
@@ -189,6 +199,7 @@ onMounted(() => store.fetch());
           <BaseInput v-model="form.amount" label="Amount" type="number" step="0.01" min="0" placeholder="0.00" :error="errors.amount" required @blur="touched.amount = true" />
           <BaseInput v-model="form.date" label="Date" type="date" :error="errors.date" required @blur="touched.date = true" />
         </div>
+        <BaseSelect v-model="form.walletId" label="Wallet" :options="wallets.options" placeholder="No wallet" />
         <BaseInput v-model="form.notes" label="Notes" placeholder="Optional details" />
         <button type="submit" class="hidden" aria-hidden="true" />
       </form>

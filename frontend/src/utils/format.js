@@ -32,10 +32,6 @@ export function toDateInput(value) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export const PAYMENT_METHODS = [
-  'Cash', 'Credit Card', 'Debit Card', 'Bank Transfer', 'Mobile Payment', 'Other',
-];
-
 // Categories are now user-defined (see stores/categories.js), each with its own hex
 // color, so chip styling can't be a static Tailwind class map keyed by name anymore —
 // this builds a tinted background/solid-text style directly from that hex value.
