@@ -1,15 +1,16 @@
 import { defineConfig } from 'vitest/config';
+import { testDatabaseUrl } from './tests/setup/testDb.js';
 
 export default defineConfig({
   test: {
-    // Isolated SQLite database for tests (relative to prisma/schema.prisma)
+    // Isolated `tests` schema on the dev Postgres database (see tests/setup/testDb.js)
     env: {
-      DATABASE_URL: 'file:./test.db',
+      DATABASE_URL: testDatabaseUrl(),
       JWT_SECRET: 'test-access-secret',
       JWT_REFRESH_SECRET: 'test-refresh-secret',
     },
     globalSetup: './tests/setup/globalSetup.js',
-    // SQLite write locks: run test files sequentially
+    // All test files share the single `tests` schema: keep runs sequential
     fileParallelism: false,
     testTimeout: 15000,
   },

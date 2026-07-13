@@ -5,8 +5,8 @@ function buildWhere(userId, query) {
   const where = { userId };
   if (query.search) {
     where.OR = [
-      { source: { contains: query.search } },
-      { notes: { contains: query.search } },
+      { source: { contains: query.search, mode: 'insensitive' } },
+      { notes: { contains: query.search, mode: 'insensitive' } },
     ];
   }
   if (query.dateFrom || query.dateTo) {

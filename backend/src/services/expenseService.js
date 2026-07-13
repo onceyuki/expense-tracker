@@ -8,8 +8,8 @@ export function buildWhere(userId, query) {
 
   if (query.search) {
     where.OR = [
-      { title: { contains: query.search } },
-      { notes: { contains: query.search } },
+      { title: { contains: query.search, mode: 'insensitive' } },
+      { notes: { contains: query.search, mode: 'insensitive' } },
     ];
   }
   if (query.category) where.category = query.category;
