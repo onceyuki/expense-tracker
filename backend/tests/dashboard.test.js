@@ -34,14 +34,12 @@ beforeAll(async () => {
     title: 'Food today',
     amount: 200,
     category: 'Food',
-    paymentMethod: 'Cash',
     date: iso(daysAgo(0)),
   });
   await auth(request(app).post('/api/expenses')).send({
     title: 'Bus earlier',
     amount: 100,
     category: 'Transportation',
-    paymentMethod: 'Cash',
     date: iso(daysAgo(3)),
   });
   await auth(request(app).post('/api/budgets')).send({ category: null, limit: 500, month });

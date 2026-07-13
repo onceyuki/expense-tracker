@@ -216,7 +216,11 @@ export async function getAnalytics(userId, { from, to, granularity = 'month' } =
 export async function getMonthlyReport(userId, month) {
   const { start, end } = monthRange(month);
   const [expenses, incomes] = await Promise.all([
-    prisma.expense.findMany({ where: { userId, date: { gte: start, lt: end } }, orderBy: { date: 'asc' } }),
+    prisma.expense.findMany({
+      where: { userId, date: { gte: start, lt: end } },
+      orderBy: { date: 'asc' },
+      include: { wallet: { select: { id: true, name: true, color: true } } },
+    }),
     prisma.income.findMany({ where: { userId, date: { gte: start, lt: end } } }),
   ]);
   const totalExpenses = sum(expenses);

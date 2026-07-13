@@ -18,7 +18,6 @@ beforeAll(async () => {
     title: 'Big shop',
     amount: 300,
     category: 'Food',
-    paymentMethod: 'Cash',
     date: '2026-07-03',
   });
 });

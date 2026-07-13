@@ -10,6 +10,7 @@ router.use(requireAuth);
 const incomeBody = z.object({
   source: z.string().min(1).max(200),
   amount: z.number().positive(),
+  walletId: z.string().min(1).nullable().optional(),
   date: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
   notes: z.string().max(1000).nullable().optional(),
 });

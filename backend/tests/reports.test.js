@@ -34,7 +34,6 @@ beforeAll(async () => {
     title: 'Rent payment',
     amount: 800,
     category: 'Rent',
-    paymentMethod: 'Bank Transfer',
     date: new Date(now.getFullYear(), now.getMonth(), 2, 9).toISOString(),
   });
 });

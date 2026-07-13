@@ -60,7 +60,7 @@ describe('categories', () => {
     const expense = await request(app)
       .post('/api/expenses')
       .set('Authorization', `Bearer ${token}`)
-      .send({ title: 'Flight', amount: 300, category: 'Travel', paymentMethod: 'Cash', date: '2026-07-01' });
+      .send({ title: 'Flight', amount: 300, category: 'Travel', date: '2026-07-01' });
     expect(expense.status).toBe(201);
 
     const rename = await request(app)
@@ -95,7 +95,7 @@ describe('categories', () => {
     const res = await request(app)
       .post('/api/expenses')
       .set('Authorization', `Bearer ${token}`)
-      .send({ title: 'X', amount: 10, category: 'DoesNotExist', paymentMethod: 'Cash', date: '2026-07-01' });
+      .send({ title: 'X', amount: 10, category: 'DoesNotExist', date: '2026-07-01' });
     expect(res.status).toBe(400);
   });
 });

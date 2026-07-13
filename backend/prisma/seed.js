@@ -18,7 +18,6 @@ const CATEGORY_DEFS = [
   { name: 'Other', color: '#64748b' },
 ];
 const CATEGORIES = CATEGORY_DEFS.map((c) => c.name);
-const PAYMENT_METHODS = ['Cash', 'Credit Card', 'Debit Card', 'Bank Transfer', 'Mobile Payment'];
 
 const EXPENSE_TITLES = {
   Food: ['Groceries', 'Lunch out', 'Coffee', 'Dinner with friends', 'Takeout'],
@@ -67,6 +66,13 @@ async function main() {
     data: CATEGORY_DEFS.map((c) => ({ userId: user.id, name: c.name, color: c.color })),
   });
 
+  const walletNames = ['Cash', 'Credit Card', 'Debit Card', 'Bank Transfer', 'Mobile Payment'];
+  await prisma.wallet.createMany({
+    data: walletNames.map((name) => ({ userId: user.id, name })),
+  });
+  const wallets = await prisma.wallet.findMany({ where: { userId: user.id } });
+  const walletIds = wallets.map((w) => w.id);
+
   const now = new Date();
   const expenses = [];
   const incomes = [];
@@ -100,7 +106,7 @@ async function main() {
       title: 'Monthly rent',
       amount: 1400,
       category: 'Rent',
-      paymentMethod: 'Bank Transfer',
+      walletId: wallets.find((w) => w.name === 'Bank Transfer').id,
       date: new Date(monthStart.getFullYear(), monthStart.getMonth(), 1, 8),
       notes: null,
     });
@@ -119,7 +125,7 @@ async function main() {
         title: pick(EXPENSE_TITLES[category]),
         amount: randBetween(min, max),
         category,
-        paymentMethod: pick(PAYMENT_METHODS),
+        walletId: pick(walletIds),
         date: new Date(
           monthStart.getFullYear(),
           monthStart.getMonth(),

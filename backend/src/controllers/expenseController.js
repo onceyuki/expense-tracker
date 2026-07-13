@@ -6,7 +6,7 @@ const EXPORT_COLUMNS = [
   { key: 'title', header: 'Title' },
   { key: 'category', header: 'Category' },
   { key: 'amount', header: 'Amount' },
-  { key: 'paymentMethod', header: 'Payment Method' },
+  { key: 'wallet', header: 'Wallet' },
   { key: 'notes', header: 'Notes' },
 ];
 
@@ -66,7 +66,11 @@ export async function exportExpenses(req, res, next) {
   try {
     const { format, ...filters } = req.validatedQuery;
     const rows = await expenseService.listAllForExport(req.user.id, filters);
-    const data = rows.map((e) => ({ ...e, date: e.date.toISOString().slice(0, 10) }));
+    const data = rows.map((e) => ({
+      ...e,
+      wallet: e.wallet?.name ?? '',
+      date: e.date.toISOString().slice(0, 10),
+    }));
     const stamp = new Date().toISOString().slice(0, 10);
 
     if (format === 'xlsx') {

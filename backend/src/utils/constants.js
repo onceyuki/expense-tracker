@@ -12,11 +12,5 @@ export const CATEGORY_COLOR_PALETTE = [
   '#e34948', '#008300', '#0891b2', '#4d7c0f', '#9333ea', '#64748b',
 ];
 
-export const PAYMENT_METHODS = [
-  'Cash',
-  'Credit Card',
-  'Debit Card',
-  'Bank Transfer',
-  'Mobile Payment',
-  'Other',
-];
+// Seeded onto every new user at registration, like DEFAULT_CATEGORIES.
+export const DEFAULT_WALLETS = [{ name: 'Cash', color: '#1baf7a' }];

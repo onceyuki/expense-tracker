@@ -1,5 +1,3 @@
-import { PAYMENT_METHODS } from '../utils/constants.js';
-
 const bearerAuth = [{ bearerAuth: [] }];
 
 const paginationParams = [
@@ -10,7 +8,7 @@ const paginationParams = [
 const expenseFilterParams = [
   { name: 'search', in: 'query', schema: { type: 'string' } },
   { name: 'category', in: 'query', schema: { type: 'string' } },
-  { name: 'paymentMethod', in: 'query', schema: { type: 'string', enum: PAYMENT_METHODS } },
+  { name: 'walletId', in: 'query', schema: { type: 'string' } },
   { name: 'dateFrom', in: 'query', schema: { type: 'string', format: 'date' } },
   { name: 'dateTo', in: 'query', schema: { type: 'string', format: 'date' } },
   { name: 'minAmount', in: 'query', schema: { type: 'number' } },
@@ -67,7 +65,7 @@ export const openApiSpec = {
           title: { type: 'string' },
           amount: { type: 'number' },
           category: { type: 'string', description: 'One of the user\'s categories, see GET /api/categories' },
-          paymentMethod: { type: 'string', enum: PAYMENT_METHODS },
+          walletId: { type: 'string', nullable: true },
           notes: { type: 'string', nullable: true },
           date: { type: 'string', format: 'date-time' },
           createdAt: { type: 'string', format: 'date-time' },
@@ -76,12 +74,12 @@ export const openApiSpec = {
       },
       ExpenseInput: {
         type: 'object',
-        required: ['title', 'amount', 'category', 'paymentMethod', 'date'],
+        required: ['title', 'amount', 'category', 'date'],
         properties: {
           title: { type: 'string' },
           amount: { type: 'number', minimum: 0.01 },
           category: { type: 'string', description: 'One of the user\'s categories, see GET /api/categories' },
-          paymentMethod: { type: 'string', enum: PAYMENT_METHODS },
+          walletId: { type: 'string', nullable: true },
           notes: { type: 'string', nullable: true },
           date: { type: 'string', example: '2026-07-01' },
         },
