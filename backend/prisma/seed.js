@@ -66,12 +66,21 @@ async function main() {
     data: CATEGORY_DEFS.map((c) => ({ userId: user.id, name: c.name, color: c.color })),
   });
 
-  const walletNames = ['Cash', 'Credit Card', 'Debit Card', 'Bank Transfer', 'Mobile Payment'];
+  const WALLET_DEFS = [
+    { name: 'Cash', color: '#1baf7a', initialBalance: 950 },
+    { name: 'GCash', color: '#2a78d6', initialBalance: 6500 },
+    { name: 'Maya', color: '#008300', initialBalance: 300 },
+    { name: 'GoTyme', color: '#0891b2', initialBalance: 20 },
+    { name: 'PayPal', color: '#4a3aa7', initialBalance: 30 },
+    { name: 'Shopee Pay', color: '#eb6834', initialBalance: 0 },
+    { name: 'Beep Card', color: '#eda100', initialBalance: 110 },
+  ];
   await prisma.wallet.createMany({
-    data: walletNames.map((name) => ({ userId: user.id, name })),
+    data: WALLET_DEFS.map((w) => ({ userId: user.id, ...w })),
   });
   const wallets = await prisma.wallet.findMany({ where: { userId: user.id } });
   const walletIds = wallets.map((w) => w.id);
+  const walletByName = (name) => wallets.find((w) => w.name === name);
 
   const now = new Date();
   const expenses = [];
@@ -87,6 +96,7 @@ async function main() {
       userId: user.id,
       source: 'Salary',
       amount: 4200,
+      walletId: walletByName('GCash').id,
       date: new Date(monthStart.getFullYear(), monthStart.getMonth(), 1, 9),
       notes: 'Monthly salary',
     });
@@ -95,6 +105,7 @@ async function main() {
         userId: user.id,
         source: 'Freelance',
         amount: randBetween(300, 900),
+        walletId: pick(walletIds),
         date: new Date(monthStart.getFullYear(), monthStart.getMonth(), Math.min(15, lastDay), 12),
         notes: 'Side project',
       });
@@ -106,7 +117,7 @@ async function main() {
       title: 'Monthly rent',
       amount: 1400,
       category: 'Rent',
-      walletId: wallets.find((w) => w.name === 'Bank Transfer').id,
+      walletId: walletByName('GCash').id,
       date: new Date(monthStart.getFullYear(), monthStart.getMonth(), 1, 8),
       notes: null,
     });
@@ -151,7 +162,38 @@ async function main() {
     ],
   });
 
-  console.log(`Seeded user ${email} (password: Password123!) with ${expenses.length} expenses, ${incomes.length} incomes, 5 budgets.`);
+  await prisma.transfer.createMany({
+    data: [
+      { userId: user.id, fromWalletId: walletByName('GCash').id, toWalletId: walletByName('Cash').id, amount: 500, date: new Date(now.getFullYear(), now.getMonth(), 3, 10), notes: 'Cash out' },
+      { userId: user.id, fromWalletId: walletByName('GCash').id, toWalletId: walletByName('Maya').id, amount: 250, date: new Date(now.getFullYear(), now.getMonth(), 8, 14), notes: null },
+      { userId: user.id, fromWalletId: walletByName('Cash').id, toWalletId: walletByName('Beep Card').id, amount: 100, date: new Date(now.getFullYear(), now.getMonth() - 1, 20, 9), notes: 'Commute top-up' },
+      { userId: user.id, fromWalletId: walletByName('PayPal').id, toWalletId: walletByName('GCash').id, amount: 30, date: new Date(now.getFullYear(), now.getMonth() - 2, 12, 16), notes: null },
+    ],
+  });
+
+  await prisma.debt.createMany({
+    data: [
+      { userId: user.id, person: 'Alice', amount: 750, date: new Date(now.getFullYear(), now.getMonth(), 5), paid: false, notes: 'Concert tickets' },
+      { userId: user.id, person: 'Ben', amount: 1200, date: new Date(now.getFullYear(), now.getMonth() - 1, 18), paid: false, notes: null },
+      { userId: user.id, person: 'Carla', amount: 300, date: new Date(now.getFullYear(), now.getMonth() - 2, 9), paid: true, notes: 'Repaid in full' },
+    ],
+  });
+
+  const personal = await prisma.savingsGoal.create({ data: { userId: user.id, name: 'Personal', target: null } });
+  const japan = await prisma.savingsGoal.create({ data: { userId: user.id, name: 'Japan 2027', target: 150000 } });
+  const contributions = [];
+  for (let m = 5; m >= 0; m--) {
+    contributions.push(
+      { goalId: personal.id, amount: randBetween(200, 900), date: new Date(now.getFullYear(), now.getMonth() - m, 10), notes: null },
+      { goalId: japan.id, amount: randBetween(2000, 6000), date: new Date(now.getFullYear(), now.getMonth() - m, 2), notes: 'Monthly set-aside' },
+    );
+  }
+  await prisma.savingsContribution.createMany({ data: contributions });
+
+  console.log(
+    `Seeded user ${email} (password: Password123!) with ${expenses.length} expenses, ${incomes.length} incomes, ` +
+    `5 budgets, ${WALLET_DEFS.length} wallets, 4 transfers, 3 debts, 2 savings goals (${contributions.length} contributions).`,
+  );
 }
 
 main()
