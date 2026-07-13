@@ -12,6 +12,7 @@ import budgetRoutes from './routes/budgetRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import walletRoutes from './routes/walletRoutes.js';
 import transferRoutes from './routes/transferRoutes.js';
+import debtRoutes from './routes/debtRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 
@@ -33,6 +34,7 @@ export function createApp() {
   app.use('/api/categories', categoryRoutes);
   app.use('/api/wallets', walletRoutes);
   app.use('/api/transfers', transferRoutes);
+  app.use('/api/debts', debtRoutes);
   app.use('/api', dashboardRoutes);
   app.use('/api/reports', reportRoutes);
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
