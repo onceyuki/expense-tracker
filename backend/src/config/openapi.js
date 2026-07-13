@@ -66,6 +66,10 @@ export const openApiSpec = {
           amount: { type: 'number' },
           category: { type: 'string', description: 'One of the user\'s categories, see GET /api/categories' },
           walletId: { type: 'string', nullable: true },
+          wallet: {
+            type: 'object', nullable: true,
+            properties: { id: { type: 'string' }, name: { type: 'string' }, color: { type: 'string', nullable: true } },
+          },
           notes: { type: 'string', nullable: true },
           date: { type: 'string', format: 'date-time' },
           createdAt: { type: 'string', format: 'date-time' },
@@ -107,8 +111,43 @@ export const openApiSpec = {
           id: { type: 'string' },
           source: { type: 'string' },
           amount: { type: 'number' },
+          walletId: { type: 'string', nullable: true },
           date: { type: 'string', format: 'date-time' },
           notes: { type: 'string', nullable: true },
+        },
+      },
+      Wallet: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' }, userId: { type: 'string' }, name: { type: 'string' },
+          color: { type: 'string', nullable: true }, initialBalance: { type: 'number' },
+          totalIncome: { type: 'number' }, totalExpenses: { type: 'number' },
+          transfersIn: { type: 'number' }, transfersOut: { type: 'number' }, balance: { type: 'number' },
+          createdAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      Transfer: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' }, fromWalletId: { type: 'string' }, toWalletId: { type: 'string' },
+          amount: { type: 'number' }, date: { type: 'string', format: 'date-time' },
+          notes: { type: 'string', nullable: true },
+        },
+      },
+      Debt: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' }, person: { type: 'string' }, amount: { type: 'number' },
+          date: { type: 'string', format: 'date-time' }, paid: { type: 'boolean' },
+          notes: { type: 'string', nullable: true },
+        },
+      },
+      SavingsGoal: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' }, name: { type: 'string' }, target: { type: 'number', nullable: true },
+          total: { type: 'number' }, thisMonth: { type: 'number' }, lastMonth: { type: 'number' },
+          contributions: { type: 'array', items: { type: 'object' } },
         },
       },
       Budget: {
@@ -280,6 +319,7 @@ export const openApiSpec = {
                 properties: {
                   source: { type: 'string' },
                   amount: { type: 'number', minimum: 0.01 },
+                  walletId: { type: 'string', nullable: true },
                   date: { type: 'string' },
                   notes: { type: 'string', nullable: true },
                 },
@@ -358,9 +398,51 @@ export const openApiSpec = {
         responses: { 204: { description: 'Deleted' }, 409: { description: 'Still in use by expenses or budgets' } },
       },
     },
+    '/api/wallets': {
+      get: { tags: ['Wallets'], security: bearerAuth, summary: 'List wallets with computed balances', responses: ok('Wallet list', { type: 'array', items: { $ref: '#/components/schemas/Wallet' } }) },
+      post: { tags: ['Wallets'], security: bearerAuth, summary: 'Create wallet', responses: { 201: { description: 'Created' }, 409: { description: 'Duplicate name' } } },
+    },
+    '/api/wallets/{id}': {
+      put: { tags: ['Wallets'], security: bearerAuth, parameters: [idParam], summary: 'Update wallet', responses: ok('Updated') },
+      delete: { tags: ['Wallets'], security: bearerAuth, parameters: [idParam], summary: 'Delete wallet (blocked while referenced)', responses: { 204: { description: 'Deleted' }, 409: { description: 'Still referenced' } } },
+    },
+    '/api/transfers': {
+      get: { tags: ['Transfers'], security: bearerAuth, parameters: paginationParams, summary: 'List transfers', responses: ok('Transfer list') },
+      post: { tags: ['Transfers'], security: bearerAuth, summary: 'Create transfer between wallets', responses: { 201: { description: 'Created' }, 400: { description: 'Same wallet or unknown wallet' } } },
+    },
+    '/api/transfers/{id}': {
+      put: { tags: ['Transfers'], security: bearerAuth, parameters: [idParam], summary: 'Update transfer', responses: ok('Updated') },
+      delete: { tags: ['Transfers'], security: bearerAuth, parameters: [idParam], summary: 'Delete transfer', responses: { 204: { description: 'Deleted' } } },
+    },
+    '/api/debts': {
+      get: { tags: ['Debts'], security: bearerAuth, parameters: paginationParams, summary: 'List debts with unpaid/paid totals', responses: ok('Debt list') },
+      post: { tags: ['Debts'], security: bearerAuth, summary: 'Create debt', responses: { 201: { description: 'Created' } } },
+    },
+    '/api/debts/{id}': {
+      put: { tags: ['Debts'], security: bearerAuth, parameters: [idParam], summary: 'Update debt / toggle paid', responses: ok('Updated') },
+      delete: { tags: ['Debts'], security: bearerAuth, parameters: [idParam], summary: 'Delete debt', responses: { 204: { description: 'Deleted' } } },
+    },
+    '/api/savings-goals': {
+      get: { tags: ['Savings'], security: bearerAuth, summary: 'List savings goals with rollups', responses: ok('Goal list', { type: 'array', items: { $ref: '#/components/schemas/SavingsGoal' } }) },
+      post: { tags: ['Savings'], security: bearerAuth, summary: 'Create savings goal', responses: { 201: { description: 'Created' }, 409: { description: 'Duplicate name' } } },
+    },
+    '/api/savings-goals/{id}': {
+      put: { tags: ['Savings'], security: bearerAuth, parameters: [idParam], summary: 'Update savings goal', responses: ok('Updated') },
+      delete: { tags: ['Savings'], security: bearerAuth, parameters: [idParam], summary: 'Delete savings goal', responses: { 204: { description: 'Deleted' } } },
+    },
+    '/api/savings-goals/{id}/contributions': {
+      post: { tags: ['Savings'], security: bearerAuth, parameters: [idParam], summary: 'Add contribution', responses: { 201: { description: 'Created' } } },
+    },
+    '/api/savings-goals/{id}/contributions/{cid}': {
+      delete: {
+        tags: ['Savings'], security: bearerAuth,
+        parameters: [idParam, { name: 'cid', in: 'path', required: true, schema: { type: 'string' } }],
+        summary: 'Delete contribution', responses: { 204: { description: 'Deleted' } },
+      },
+    },
     '/api/dashboard': {
       get: {
-        summary: 'Dashboard aggregates: totals, stats, chart series, recent activity, budget alerts',
+        summary: 'Dashboard aggregates: totals, stats, chart series, recent activity, budget alerts, cash flow, wallet balances',
         security: bearerAuth,
         parameters: [{ name: 'month', in: 'query', schema: { type: 'string', example: '2026-07' } }],
         responses: ok('Dashboard payload'),
