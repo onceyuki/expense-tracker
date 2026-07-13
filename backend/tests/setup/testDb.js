@@ -10,5 +10,8 @@ export function testDatabaseUrl() {
   if (!base) throw new Error('DATABASE_URL is not set — configure backend/.env');
   const url = new URL(base);
   url.searchParams.set('schema', 'tests');
+  // Supabase's session-mode pooler allows only 15 clients; cap Prisma's pool so
+  // parallel queries queue instead of exhausting the pooler.
+  url.searchParams.set('connection_limit', '5');
   return url.toString();
 }
