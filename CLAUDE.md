@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Ledgerly — a full-stack budget & expense tracker (Vue 3 frontend, Express/Prisma backend). Built from [project-spec.md](project-spec.md); see [README.md](README.md) for the full feature list and API overview.
+Why Am I Like This (Financially) — a full-stack budget & expense tracker (Vue 3 frontend, Express/Prisma backend). Built from [project-spec.md](project-spec.md); see [README.md](README.md) for the full feature list and API overview.
 
 ## Commands
 

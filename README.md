@@ -1,4 +1,4 @@
-# Ledgerly — Budget & Expense Tracker
+# Why Am I Like This (Financially) — Budget & Expense Tracker
 
 A full-stack personal finance application: track expenses and income, set monthly and per-category budgets, and explore spending through an interactive dashboard and analytics — with a clean, minimal UI in light and dark mode.
 

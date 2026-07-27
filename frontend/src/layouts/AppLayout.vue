@@ -53,7 +53,7 @@ async function logout() {
         <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 font-mono text-sm font-semibold text-white">
           L
         </div>
-        <span class="text-lg font-bold tracking-tight">Ledgerly</span>
+        <span class="text-lg font-bold tracking-tight">Why Am I Like This (Financially)</span>
         <button
           class="ml-auto rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden"
           aria-label="Close menu"
