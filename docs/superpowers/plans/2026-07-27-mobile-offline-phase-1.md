@@ -259,11 +259,24 @@ The dynamic import avoids a circular dependency between `api.js` and the router.
 
 - [ ] **Step 6: Point the mobile build at the API**
 
-Create `frontend/.env.mobile` (replace the IP with the dev machine's LAN address):
+Create `frontend/.env.mobile`. `192.168.110.38` is this machine's Wi-Fi address — if
+`ipconfig` shows a different one, use that instead and update Step 7 to match.
 
 ```
-VITE_API_ORIGIN=http://192.168.1.10:4000
+VITE_API_ORIGIN=http://192.168.110.38:4000
 ```
+
+Already verified: `server.js:6` calls `app.listen(config.port)` with no host, so Express
+binds all interfaces and the phone can reach it. No backend change needed for that.
+
+**CORS is a different matter.** `app.js:23` sets `cors({ origin: config.clientOrigin })`
+with a single origin defaulting to `http://localhost:5173` (`config/index.js:11`). The
+Capacitor WebView's origin is `https://localhost`, so a browser-enforced request from the
+app would be rejected. `CapacitorHttp` (Step 8) makes requests natively, where CORS is not
+enforced at all, which is why it is the primary mitigation for both this and the cookie
+problem. If CapacitorHttp turns out not to work, allowing a second origin means changing
+`cors()` to accept an array — a backend code change. **Stop and raise it rather than
+making that edit.**
 
 - [ ] **Step 7: Allow cleartext to the dev server**
 
@@ -273,7 +286,7 @@ Create `frontend/android/app/src/main/res/xml/network_security_config.xml`:
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">192.168.1.10</domain>
+        <domain includeSubdomains="true">192.168.110.38</domain>
     </domain-config>
 </network-security-config>
 ```
