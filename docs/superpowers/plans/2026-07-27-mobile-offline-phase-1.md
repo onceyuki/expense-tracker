@@ -2025,27 +2025,172 @@ Replace the actions:
     },
 ```
 
-- [ ] **Step 7: Update the debts, savings and auth store tests**
+- [ ] **Step 7: Update the debts store test**
 
-Apply the same mock swap as Step 2 to `debts.test.js`, `savings.test.js` and `auth.test.js`:
-replace the `vi.mock('../../services/api.js', …)` block with a `vi.mock('../../data/source.js', …)`
-exposing the repo methods that store uses, and change every `expect(api.get)` /
-`expect(api.post)` assertion to the corresponding repo method. `auth.test.js` keeps its
-`services/api.js` mock **as well**, because the auth store still imports `setToken`,
-`clearToken` and `getToken` from there:
+Replace the whole of `frontend/src/stores/__tests__/debts.test.js` with:
 
 ```js
-vi.mock('../../services/api.js', () => ({
-  setToken: vi.fn(), clearToken: vi.fn(), getToken: vi.fn(() => 'token'),
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
+
+vi.mock('../../data/source.js', () => ({
+  dataSource: {
+    debtRepo: { list: vi.fn(), create: vi.fn(), update: vi.fn(), remove: vi.fn() },
+  },
 }));
+
+import { dataSource } from '../../data/source.js';
+import { useDebtsStore } from '../debts.js';
+
+const LIST = {
+  items: [{ id: 'd1', person: 'Alice', amount: 750, paid: false }],
+  total: 1, page: 1, pageSize: 10, totalPages: 1,
+  totals: { unpaid: 750, paid: 0 },
+};
+
+describe('debts store', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+  });
+
+  it('fetch loads items and totals', async () => {
+    dataSource.debtRepo.list.mockResolvedValue(LIST);
+    const store = useDebtsStore();
+    await store.fetch();
+    expect(store.items).toHaveLength(1);
+    expect(store.totals.unpaid).toBe(750);
+  });
+
+  it('togglePaid sends the flipped value and refetches', async () => {
+    dataSource.debtRepo.list.mockResolvedValue(LIST);
+    dataSource.debtRepo.update.mockResolvedValue({ ...LIST.items[0], paid: true });
+    const store = useDebtsStore();
+    await store.fetch();
+    await store.togglePaid(store.items[0]);
+    expect(dataSource.debtRepo.update).toHaveBeenCalledWith('d1', { paid: true });
+    expect(dataSource.debtRepo.list).toHaveBeenCalledTimes(2);
+  });
+});
+```
+
+- [ ] **Step 8: Update the savings store test**
+
+Replace the whole of `frontend/src/stores/__tests__/savings.test.js` with:
+
+```js
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
+
+vi.mock('../../data/source.js', () => ({
+  dataSource: {
+    savingsRepo: {
+      listGoals: vi.fn(), createGoal: vi.fn(), updateGoal: vi.fn(), removeGoal: vi.fn(),
+      addContribution: vi.fn(), removeContribution: vi.fn(),
+    },
+  },
+}));
+
+import { dataSource } from '../../data/source.js';
+import { useSavingsStore } from '../savings.js';
+
+const GOALS = [{ id: 'g1', name: 'Japan 2027', target: 150000, total: 5434.05, thisMonth: 5434.05, lastMonth: 0, contributions: [] }];
+
+describe('savings store', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+  });
+
+  it('fetch loads goals', async () => {
+    dataSource.savingsRepo.listGoals.mockResolvedValue(GOALS);
+    const store = useSavingsStore();
+    await store.fetch();
+    expect(dataSource.savingsRepo.listGoals).toHaveBeenCalled();
+    expect(store.goals).toHaveLength(1);
+  });
+
+  it('addContribution delegates to the goal then refetches', async () => {
+    dataSource.savingsRepo.addContribution.mockResolvedValue({ id: 'c1' });
+    dataSource.savingsRepo.listGoals.mockResolvedValue(GOALS);
+    const store = useSavingsStore();
+    await store.addContribution('g1', { amount: 100, date: '2026-07-01' });
+    expect(dataSource.savingsRepo.addContribution).toHaveBeenCalledWith('g1', { amount: 100, date: '2026-07-01' });
+    expect(dataSource.savingsRepo.listGoals).toHaveBeenCalled();
+  });
+});
+```
+
+- [ ] **Step 9: Update the auth store test**
+
+`auth.test.js` keeps its `services/api.js` mock **as well**, because the auth store still
+imports `setToken`, `clearToken` and `getToken` from there. Replace lines 1–12 with:
+
+```js
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
+
+vi.mock('../../services/api.js', () => ({
+  setToken: vi.fn(),
+  clearToken: vi.fn(),
+  getToken: vi.fn(() => 'stored-token'),
+}));
+
 vi.mock('../../data/source.js', () => ({
   dataSource: {
     authRepo: { register: vi.fn(), login: vi.fn(), me: vi.fn(), updateProfile: vi.fn(), logout: vi.fn() },
   },
 }));
+
+import { setToken, clearToken } from '../../services/api.js';
+import { dataSource } from '../../data/source.js';
+import { useAuthStore } from '../auth.js';
 ```
 
-- [ ] **Step 8: Run the full frontend suite**
+Then rewrite the four test bodies to drive the repo instead of axios:
+
+```js
+  it('login stores token (respecting remember) and user', async () => {
+    dataSource.authRepo.login.mockResolvedValue({
+      user: { id: '1', name: 'Ada Lovelace', email: 'ada@x.com' }, accessToken: 'tok',
+    });
+    const store = useAuthStore();
+    await store.login({ email: 'ada@x.com', password: 'pw', remember: false });
+
+    expect(dataSource.authRepo.login).toHaveBeenCalledWith({
+      email: 'ada@x.com', password: 'pw', remember: false,
+    });
+    expect(setToken).toHaveBeenCalledWith('tok', false);
+    expect(store.isAuthenticated).toBe(true);
+    expect(store.initials).toBe('AL');
+  });
+
+  it('fetchMe populates user', async () => {
+    dataSource.authRepo.me.mockResolvedValue({ id: '1', name: 'Ada', email: 'a@x.com' });
+    const store = useAuthStore();
+    await store.fetchMe();
+    expect(store.user.name).toBe('Ada');
+  });
+
+  it('fetchMe clears token when the call fails', async () => {
+    dataSource.authRepo.me.mockRejectedValue(new Error('401'));
+    const store = useAuthStore();
+    await store.fetchMe();
+    expect(clearToken).toHaveBeenCalled();
+    expect(store.user).toBeNull();
+  });
+
+  it('logout clears state even if the call fails', async () => {
+    dataSource.authRepo.logout.mockRejectedValue(new Error('network'));
+    const store = useAuthStore();
+    store.user = { id: '1', name: 'Ada' };
+    await store.logout();
+    expect(clearToken).toHaveBeenCalled();
+    expect(store.user).toBeNull();
+  });
+```
+
+- [ ] **Step 10: Run the full frontend suite**
 
 Run: `cd frontend && npm test`
 Expected: every test passes. No file under `src/stores/` should still import `api`
@@ -2057,7 +2202,7 @@ cd frontend && grep -rn "services/api" src/stores
 
 Expected: exactly one hit, in `auth.js`.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add frontend/src/stores
@@ -3910,6 +4055,17 @@ import { onSignedIn, onSignedOut } from '../data/session.js';
 
 Then append `await onSignedIn(this.user);` as the last line of both `register` and `login`,
 and add `await onSignedOut();` inside `logout`'s `finally` block after `this.user = null;`.
+
+This makes `auth.test.js` import the real `data/session.js`, which pulls in
+`@capacitor/core` and would try to open a database during the test. Add a third mock at the
+top of `frontend/src/stores/__tests__/auth.test.js`, alongside the two already there:
+
+```js
+vi.mock('../../data/session.js', () => ({
+  onSignedIn: vi.fn(),
+  onSignedOut: vi.fn(),
+}));
+```
 
 - [ ] **Step 7: Run the full suite**
 
