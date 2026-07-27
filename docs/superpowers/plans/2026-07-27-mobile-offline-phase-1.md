@@ -100,24 +100,25 @@ cd frontend && npm install @capacitor/core @capacitor/android @capacitor/ios && 
 
 - [ ] **Step 2: Create the Capacitor config**
 
-Create `frontend/capacitor.config.ts`:
+Create `frontend/capacitor.config.json`:
 
-```ts
-import type { CapacitorConfig } from '@capacitor/cli';
-
-const config: CapacitorConfig = {
-  appId: 'com.gabatino.whyamilikethis',
-  appName: 'Why Am I Like This',
-  webDir: 'dist',
-  plugins: {
-    CapacitorSQLite: {
-      androidIsEncryption: false,
-    },
-  },
-};
-
-export default config;
+```json
+{
+  "appId": "com.gabatino.whyamilikethis",
+  "appName": "Why Am I Like This",
+  "webDir": "dist",
+  "plugins": {
+    "CapacitorSQLite": {
+      "androidIsEncryption": false
+    }
+  }
+}
 ```
+
+**JSON, not TypeScript.** `@capacitor/cli` can only parse a `.ts` config by loading
+TypeScript itself, which would mean adding a pinned `typescript` devDependency to a project
+that is otherwise 100% plain JavaScript — a whole toolchain carried for one static config
+file with no logic in it. Do not add `typescript` to `package.json`.
 
 - [ ] **Step 3: Add the mobile build scripts**
 
@@ -316,17 +317,17 @@ This permits plain HTTP to the dev machine only. Production uses HTTPS and needs
 
 - [ ] **Step 8: Enable native HTTP so cookies bypass WebView rules**
 
-In `frontend/capacitor.config.ts`, add to the config object:
+In `frontend/capacitor.config.json`, replace the `plugins` object with:
 
-```ts
-  plugins: {
-    CapacitorSQLite: {
-      androidIsEncryption: false,
+```json
+  "plugins": {
+    "CapacitorSQLite": {
+      "androidIsEncryption": false
     },
-    CapacitorHttp: {
-      enabled: true,
-    },
-  },
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
 ```
 
 `CapacitorHttp` patches `fetch`/`XMLHttpRequest` to run natively, so axios requests leave the
