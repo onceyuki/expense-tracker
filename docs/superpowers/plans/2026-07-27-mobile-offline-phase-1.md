@@ -62,7 +62,7 @@ Only `statsService` — the dashboard and analytics endpoints — defers to Phas
 
 | File | Responsibility |
 |------|----------------|
-| `frontend/capacitor.config.ts` | Capacitor app id, name, webDir, plugin config |
+| `frontend/capacitor.config.json` | Capacitor app id, name, webDir, plugin config |
 | `frontend/src/data/db/types.js` | JSDoc contract for the adapter interface |
 | `frontend/src/data/db/nodeDb.js` | `node:sqlite` adapter (tests) |
 | `frontend/src/data/db/nativeDb.js` | `@capacitor-community/sqlite` adapter (device) |
@@ -84,7 +84,7 @@ Only `statsService` — the dashboard and analytics endpoints — defers to Phas
 ### Task 1: Capacitor scaffold and Android project
 
 **Files:**
-- Create: `frontend/capacitor.config.ts`
+- Create: `frontend/capacitor.config.json`
 - Modify: `frontend/package.json`, `frontend/.gitignore`
 - Generated: `frontend/android/`, `frontend/ios/`
 
@@ -182,7 +182,7 @@ crash; that is the gate for this task.
 - [ ] **Step 9: Commit**
 
 ```bash
-git add frontend/capacitor.config.ts frontend/package.json frontend/package-lock.json frontend/.gitignore frontend/android frontend/ios
+git add frontend/capacitor.config.json frontend/package.json frontend/package-lock.json frontend/.gitignore frontend/android frontend/ios
 git commit -m "feat(mobile): add Capacitor with Android and iOS projects"
 ```
 
@@ -355,7 +355,7 @@ Expected: all existing tests plus the 3 new ones pass.
 - [ ] **Step 11: Commit**
 
 ```bash
-git add frontend/src/services/api.js frontend/src/services/__tests__/api.test.js frontend/.env.mobile frontend/capacitor.config.ts frontend/android
+git add frontend/src/services/api.js frontend/src/services/__tests__/api.test.js frontend/.env.mobile frontend/capacitor.config.json frontend/android
 git commit -m "feat(mobile): env-driven API base URL and native HTTP for WebView auth"
 ```
 
