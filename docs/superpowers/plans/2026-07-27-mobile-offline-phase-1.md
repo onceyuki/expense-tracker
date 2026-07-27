@@ -24,17 +24,32 @@
 - **No backend file is modified in Phase 1.** If a task appears to require one, stop and raise it.
 - Backend test suite must stay green; it is not touched.
 
-## Prerequisites (human, before Task 1)
+## Prerequisites — already satisfied
 
-Install Android Studio ≥ 2025.2.1, then in its SDK Manager install the Android 36 SDK
-platform and Platform-Tools. Either create an emulator (Device Manager → Pixel, API 36) or
-enable USB debugging on a physical phone and connect it. Verify with:
+Verified on this machine before execution began:
+
+- Android Studio installed at `C:\Program Files\Android\Android Studio`.
+- SDK at `C:\Users\msgabatino\AppData\Local\Android\Sdk`, platform `android-36.1`.
+- Bundled JDK (JBR) `openjdk 21.0.10` at `C:\Program Files\Android\Android Studio\jbr`.
+- One physical device attached and authorised: `adb devices` lists `2C011FDH200N06 device`.
+
+**Two environment details every gradle/adb step depends on.** `JAVA_HOME` and
+`ANDROID_HOME` are both unset, so export them in the same shell before running gradle:
 
 ```bash
-adb devices
+export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
+export ANDROID_HOME="$LOCALAPPDATA/Android/Sdk"
 ```
 
-Expected: at least one device listed as `device` (not `unauthorized`).
+Alternatively write `sdk.dir=C\:\\Users\\msgabatino\\AppData\\Local\\Android\\Sdk` into
+`frontend/android/local.properties` after Task 1 Step 4 generates the project.
+
+**The installed platform is `android-36.1`, not `android-36`.** If gradle fails resolving
+`compileSdkVersion 36`, install the exact platform rather than lowering the version:
+
+```bash
+"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager.bat" "platforms;android-36"
+```
 
 ## Scope note
 
@@ -643,13 +658,159 @@ export async function createDatabase(name = 'whyamilikethis') {
 Both imports are dynamic so neither driver is pulled into a bundle that will not use it.
 `createNodeDatabase` is deliberately absent — tests import it directly.
 
-- [ ] **Step 5: Verify the bundle still builds**
+- [ ] **Step 5: Test the native adapter's result translation**
+
+Neither driver runs for real under Vitest, but the thing most likely to break is the
+result-shape mapping — the plugin returns `{values}` and `{changes:{changes}}`, not rows
+and counts. Mock the plugin and assert the translation.
+
+Create `frontend/src/data/db/__tests__/nativeDb.test.js`:
+
+```js
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const handle = {
+  open: vi.fn(),
+  execute: vi.fn(),
+  query: vi.fn(),
+  run: vi.fn(),
+  close: vi.fn(),
+};
+const createConnection = vi.fn(async () => handle);
+const closeConnection = vi.fn();
+
+vi.mock('@capacitor-community/sqlite', () => ({
+  CapacitorSQLite: {},
+  SQLiteConnection: class {
+    createConnection = createConnection;
+    closeConnection = closeConnection;
+  },
+}));
+
+import { createNativeDatabase } from '../nativeDb.js';
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe('native adapter', () => {
+  it('enables foreign keys and WAL on open', async () => {
+    await createNativeDatabase('test');
+    expect(handle.open).toHaveBeenCalled();
+    expect(handle.execute).toHaveBeenCalledWith('PRAGMA foreign_keys = ON');
+    expect(handle.execute).toHaveBeenCalledWith('PRAGMA journal_mode = WAL');
+  });
+
+  it('unwraps query results from values', async () => {
+    handle.query.mockResolvedValue({ values: [{ id: 'a' }] });
+    const db = await createNativeDatabase('test');
+    expect(await db.query('SELECT 1', [])).toEqual([{ id: 'a' }]);
+  });
+
+  it('returns an empty array when values is absent', async () => {
+    handle.query.mockResolvedValue({});
+    const db = await createNativeDatabase('test');
+    expect(await db.query('SELECT 1', [])).toEqual([]);
+  });
+
+  it('unwraps the nested changes count', async () => {
+    handle.run.mockResolvedValue({ changes: { changes: 3 } });
+    const db = await createNativeDatabase('test');
+    expect(await db.run('DELETE FROM t', [])).toEqual({ changes: 3 });
+  });
+
+  it('reports zero changes when the plugin omits them', async () => {
+    handle.run.mockResolvedValue({});
+    const db = await createNativeDatabase('test');
+    expect(await db.run('DELETE FROM t', [])).toEqual({ changes: 0 });
+  });
+
+  it('commits a successful transaction and rolls a failed one back', async () => {
+    const db = await createNativeDatabase('test');
+    await db.transaction(async () => 'ok');
+    expect(handle.execute).toHaveBeenCalledWith('COMMIT');
+
+    handle.execute.mockClear();
+    await expect(db.transaction(async () => { throw new Error('boom'); })).rejects.toThrow('boom');
+    expect(handle.execute).toHaveBeenCalledWith('ROLLBACK');
+    expect(handle.execute).not.toHaveBeenCalledWith('COMMIT');
+  });
+});
+```
+
+- [ ] **Step 6: Test that the web adapter persists after writes**
+
+sql.js is in-memory, so a missing `saveToStore` silently loses data on reload. This test
+runs under jsdom (the project default — do **not** add the node environment docblock).
+
+Create `frontend/src/data/db/__tests__/webDb.test.js`:
+
+```js
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const handle = { open: vi.fn(), execute: vi.fn(), query: vi.fn(), run: vi.fn(), close: vi.fn() };
+const initWebStore = vi.fn();
+const saveToStore = vi.fn();
+
+vi.mock('@capacitor-community/sqlite', () => ({
+  CapacitorSQLite: {},
+  SQLiteConnection: class {
+    createConnection = vi.fn(async () => handle);
+    closeConnection = vi.fn();
+    initWebStore = initWebStore;
+    saveToStore = saveToStore;
+  },
+}));
+
+vi.mock('jeep-sqlite/loader', () => ({ defineCustomElements: vi.fn() }));
+
+import { createWebDatabase } from '../webDb.js';
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  // whenDefined('jeep-sqlite') never settles unless the element exists.
+  if (!customElements.get('jeep-sqlite')) {
+    customElements.define('jeep-sqlite', class extends HTMLElement {});
+  }
+});
+
+describe('web adapter', () => {
+  it('initialises the web store before use', async () => {
+    await createWebDatabase('test');
+    expect(initWebStore).toHaveBeenCalled();
+    expect(document.querySelector('jeep-sqlite')).not.toBeNull();
+  });
+
+  it('flushes to IndexedDB after a write', async () => {
+    handle.run.mockResolvedValue({ changes: { changes: 1 } });
+    const db = await createWebDatabase('test');
+    saveToStore.mockClear();
+    await db.run('INSERT INTO t VALUES (1)', []);
+    expect(saveToStore).toHaveBeenCalledWith('test');
+  });
+
+  it('does not flush after a read', async () => {
+    handle.query.mockResolvedValue({ values: [] });
+    const db = await createWebDatabase('test');
+    saveToStore.mockClear();
+    await db.query('SELECT 1', []);
+    expect(saveToStore).not.toHaveBeenCalled();
+  });
+});
+```
+
+- [ ] **Step 7: Run the adapter tests**
+
+Run: `cd frontend && npx vitest run src/data/db`
+Expected: PASS — 4 node:sqlite conformance tests, 6 native, 3 web.
+
+- [ ] **Step 8: Verify the bundle still builds**
 
 Run: `cd frontend && npm run build`
 Expected: build succeeds. Confirm `jeep-sqlite` is only in a lazily-loaded chunk, not the
 main entry.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add frontend/src/data/db frontend/package.json frontend/package-lock.json
