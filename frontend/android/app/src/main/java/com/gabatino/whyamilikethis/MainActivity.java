@@ -1,0 +1,5 @@
+package com.gabatino.whyamilikethis;
+
+import com.getcapacitor.BridgeActivity;
+
+public class MainActivity extends BridgeActivity {}
