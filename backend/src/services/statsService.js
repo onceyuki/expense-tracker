@@ -1,5 +1,6 @@
 import { prisma } from '../utils/prisma.js';
 import { listBudgets, monthRange } from './budgetService.js';
+import { listWallets } from './walletService.js';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
@@ -29,17 +30,27 @@ export async function getDashboard(userId, month = monthKey(new Date())) {
   const { start, end } = monthRange(month);
   const sixMonthsAgo = new Date(start.getFullYear(), start.getMonth() - 5, 1);
   const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+  const prevStart = new Date(start.getFullYear(), start.getMonth() - 1, 1);
 
-  const [expenses, incomes, allExp, allInc, budgets, recentExpenses, recentIncomes] =
-    await Promise.all([
-      prisma.expense.findMany({ where: { userId, date: { gte: sixMonthsAgo, lt: end } } }),
-      prisma.income.findMany({ where: { userId, date: { gte: sixMonthsAgo, lt: end } } }),
-      prisma.expense.aggregate({ where: { userId }, _sum: { amount: true } }),
-      prisma.income.aggregate({ where: { userId }, _sum: { amount: true } }),
-      listBudgets(userId, month),
-      prisma.expense.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 10 }),
-      prisma.income.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 10 }),
-    ]);
+  const [
+    expenses, incomes, allExp, allInc, budgets, recentExpenses, recentIncomes,
+    wallets, unpaidDebts, cfContributions, expBeforeStart, incBeforeStart, expBeforePrev, incBeforePrev,
+  ] = await Promise.all([
+    prisma.expense.findMany({ where: { userId, date: { gte: sixMonthsAgo, lt: end } } }),
+    prisma.income.findMany({ where: { userId, date: { gte: sixMonthsAgo, lt: end } } }),
+    prisma.expense.aggregate({ where: { userId }, _sum: { amount: true } }),
+    prisma.income.aggregate({ where: { userId }, _sum: { amount: true } }),
+    listBudgets(userId, month),
+    prisma.expense.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 10 }),
+    prisma.income.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 10 }),
+    listWallets(userId),
+    prisma.debt.findMany({ where: { userId, paid: false } }),
+    prisma.savingsContribution.findMany({ where: { goal: { userId }, date: { gte: prevStart, lt: end } } }),
+    prisma.expense.aggregate({ where: { userId, date: { lt: start } }, _sum: { amount: true } }),
+    prisma.income.aggregate({ where: { userId, date: { lt: start } }, _sum: { amount: true } }),
+    prisma.expense.aggregate({ where: { userId, date: { lt: prevStart } }, _sum: { amount: true } }),
+    prisma.income.aggregate({ where: { userId, date: { lt: prevStart } }, _sum: { amount: true } }),
+  ]);
 
   const monthExpenses = expenses.filter((e) => e.date >= start && e.date < end);
   const monthIncomes = incomes.filter((i) => i.date >= start && i.date < end);
@@ -48,6 +59,42 @@ export async function getDashboard(userId, month = monthKey(new Date())) {
   const totalIncome = sum(monthIncomes);
   const overallBudget = budgets.find((b) => b.category === null);
   const monthlyBudget = overallBudget?.limit ?? 0;
+
+  // Cash flow: start balance carries over from everything before the month
+  const prevExpenses = expenses.filter((e) => e.date >= prevStart && e.date < start);
+  const prevIncomes = incomes.filter((i) => i.date >= prevStart && i.date < start);
+  const initialTotal = wallets.reduce((acc, w) => acc + w.initialBalance, 0);
+
+  function cashFlowFor(windowStart, windowEnd, incomeSum, expenseSum, priorInc, priorExp) {
+    const startBalance = round2(initialTotal + priorInc - priorExp);
+    const debt = round2(
+      unpaidDebts.filter((d) => d.date < windowEnd).reduce((acc, d) => acc + d.amount, 0),
+    );
+    const savings = round2(
+      cfContributions
+        .filter((c) => c.date >= windowStart && c.date < windowEnd)
+        .reduce((acc, c) => acc + c.amount, 0),
+    );
+    return {
+      startBalance,
+      income: incomeSum,
+      expense: expenseSum,
+      debt,
+      savings,
+      endBalance: round2(startBalance + incomeSum - expenseSum),
+    };
+  }
+
+  const cashFlow = {
+    thisMonth: cashFlowFor(
+      start, end, totalIncome, totalExpenses,
+      incBeforeStart._sum.amount ?? 0, expBeforeStart._sum.amount ?? 0,
+    ),
+    lastMonth: cashFlowFor(
+      prevStart, start, sum(prevIncomes), sum(prevExpenses),
+      incBeforePrev._sum.amount ?? 0, expBeforePrev._sum.amount ?? 0,
+    ),
+  };
 
   // Week/today are relative to the real current date, not the selected month
   const weekExpenses = (
@@ -152,6 +199,8 @@ export async function getDashboard(userId, month = monthKey(new Date())) {
     recentActivity,
     alerts,
     budgets,
+    cashFlow,
+    wallets: wallets.map((w) => ({ id: w.id, name: w.name, color: w.color, balance: w.balance })),
   };
 }
 
@@ -216,7 +265,11 @@ export async function getAnalytics(userId, { from, to, granularity = 'month' } =
 export async function getMonthlyReport(userId, month) {
   const { start, end } = monthRange(month);
   const [expenses, incomes] = await Promise.all([
-    prisma.expense.findMany({ where: { userId, date: { gte: start, lt: end } }, orderBy: { date: 'asc' } }),
+    prisma.expense.findMany({
+      where: { userId, date: { gte: start, lt: end } },
+      orderBy: { date: 'asc' },
+      include: { wallet: { select: { id: true, name: true, color: true } } },
+    }),
     prisma.income.findMany({ where: { userId, date: { gte: start, lt: end } } }),
   ]);
   const totalExpenses = sum(expenses);

@@ -34,14 +34,12 @@ beforeAll(async () => {
     title: 'Food today',
     amount: 200,
     category: 'Food',
-    paymentMethod: 'Cash',
     date: iso(daysAgo(0)),
   });
   await auth(request(app).post('/api/expenses')).send({
     title: 'Bus earlier',
     amount: 100,
     category: 'Transportation',
-    paymentMethod: 'Cash',
     date: iso(daysAgo(3)),
   });
   await auth(request(app).post('/api/budgets')).send({ category: null, limit: 500, month });
@@ -101,6 +99,40 @@ describe('dashboard', () => {
     expect(body.alerts).toHaveLength(1);
     expect(body.alerts[0].level).toBe(50);
     expect(body.alerts[0].percentUsed).toBe(60);
+  });
+});
+
+describe('dashboard cash flow', () => {
+  let cfToken;
+  const auth = (req) => req.set('Authorization', `Bearer ${cfToken}`);
+
+  beforeAll(async () => {
+    ({ token: cfToken } = await createTestUser(app, 'cashflow@test.com', 'Cash Flow', ['Food']));
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const day = (d) => `${thisMonth}-${String(d).padStart(2, '0')}`;
+
+    const wallet = (await auth(request(app).post('/api/wallets')).send({ name: 'GCash', initialBalance: 100 })).body.wallet;
+    await auth(request(app).post('/api/income')).send({ source: 'Salary', amount: 50, date: day(1), walletId: wallet.id });
+    await auth(request(app).post('/api/expenses')).send({ title: 'Snack', amount: 20, category: 'Food', date: day(2), walletId: wallet.id });
+    await auth(request(app).post('/api/debts')).send({ person: 'Alice', amount: 40, date: day(3) });
+    const goal = (await auth(request(app).post('/api/savings-goals')).send({ name: 'Fund' })).body.goal;
+    await auth(request(app).post(`/api/savings-goals/${goal.id}/contributions`)).send({ amount: 25, date: day(4) });
+  });
+
+  it('returns cashFlow and wallet balances', async () => {
+    const res = await auth(request(app).get('/api/dashboard'));
+    expect(res.status).toBe(200);
+    const { cashFlow, wallets } = res.body;
+    // Default 'Cash' wallet (0) + GCash (100 initial)
+    expect(cashFlow.thisMonth.startBalance).toBe(100);
+    expect(cashFlow.thisMonth.income).toBe(50);
+    expect(cashFlow.thisMonth.expense).toBe(20);
+    expect(cashFlow.thisMonth.debt).toBe(40);
+    expect(cashFlow.thisMonth.savings).toBe(25);
+    expect(cashFlow.thisMonth.endBalance).toBe(130); // 100 + 50 − 20
+    expect(cashFlow.lastMonth.income).toBe(0);
+    const gcash = wallets.find((w) => w.name === 'GCash');
+    expect(gcash.balance).toBe(130);
   });
 });
 

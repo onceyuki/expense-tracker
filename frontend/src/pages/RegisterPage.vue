@@ -36,7 +36,7 @@ async function submit() {
   loading.value = true;
   try {
     await auth.register({ name: form.name.trim(), email: form.email, password: form.password });
-    ui.toast('Account created — welcome to Ledgerly');
+    ui.toast('Account created — welcome to Why Am I Like This (Financially)');
     router.push('/');
   } catch (error) {
     ui.toast(apiErrorMessage(error, 'Registration failed'), 'error');

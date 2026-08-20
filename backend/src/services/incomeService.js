@@ -1,12 +1,15 @@
 import { prisma } from '../utils/prisma.js';
 import { ApiError } from '../utils/ApiError.js';
+import { assertWalletExists } from './walletService.js';
+
+const walletSelect = { wallet: { select: { id: true, name: true, color: true } } };
 
 function buildWhere(userId, query) {
   const where = { userId };
   if (query.search) {
     where.OR = [
-      { source: { contains: query.search } },
-      { notes: { contains: query.search } },
+      { source: { contains: query.search, mode: 'insensitive' } },
+      { notes: { contains: query.search, mode: 'insensitive' } },
     ];
   }
   if (query.dateFrom || query.dateTo) {
@@ -29,6 +32,7 @@ export async function listIncome(userId, query) {
   const [items, total] = await Promise.all([
     prisma.income.findMany({
       where,
+      include: walletSelect,
       orderBy: { [query.sortBy ?? 'date']: query.sortDir ?? 'desc' },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -46,14 +50,20 @@ export async function getIncome(userId, id) {
 }
 
 export async function createIncome(userId, data) {
-  return prisma.income.create({ data: { ...data, userId, date: new Date(data.date) } });
+  await assertWalletExists(userId, data.walletId);
+  return prisma.income.create({
+    data: { ...data, userId, date: new Date(data.date) },
+    include: walletSelect,
+  });
 }
 
 export async function updateIncome(userId, id, data) {
   await getIncome(userId, id);
+  await assertWalletExists(userId, data.walletId);
   return prisma.income.update({
     where: { id },
     data: { ...data, date: data.date ? new Date(data.date) : undefined },
+    include: walletSelect,
   });
 }
 

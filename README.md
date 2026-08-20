@@ -1,4 +1,4 @@
-# Ledgerly — Budget & Expense Tracker
+# Why Am I Like This (Financially) — Budget & Expense Tracker
 
 A full-stack personal finance application: track expenses and income, set monthly and per-category budgets, and explore spending through an interactive dashboard and analytics — with a clean, minimal UI in light and dark mode.
 
@@ -7,10 +7,14 @@ Built from [project-spec.md](project-spec.md).
 ## Features
 
 - **Auth** — register, login (remember me), JWT access tokens + rotating httpOnly refresh cookie, protected routes, profile & password update, forgot-password stub
-- **Expenses** — full CRUD plus duplicate; search (title/notes), filters (category, payment method, date range, amount range), sorting, pagination; CSV and Excel export honoring active filters; draft auto-save; keyboard shortcuts (`n` new expense, `/` focus search)
-- **Income** — full CRUD with search and pagination
+- **Expenses** — full CRUD plus duplicate; search (title/notes), filters (category, wallet, date range, amount range), sorting, pagination; CSV and Excel export honoring active filters; draft auto-save; keyboard shortcuts (`n` new expense, `/` focus search)
+- **Income** — full CRUD with search and pagination; optional wallet link
 - **Budgets** — overall monthly budget and per-category budgets with computed spend, remaining, and % used; color-shifting progress bars; month navigation
-- **Dashboard** — income/expenses/savings/budget/balance stat cards, today & weekly spending, top categories, highest/lowest expense, average daily spend, savings rate; category doughnut, monthly expenses line, income-vs-expenses bar, weekly spending bar; recent activity; budget alerts at 50/75/90/100% surfaced as toasts
+- **Wallets** — named accounts (Cash, GCash, …) with an initial balance and a running balance computed from linked income, expenses and transfers; deletion blocked while referenced
+- **Transfers** — move money between wallets; balances update on both sides
+- **Debts** — who/amount/date with a paid/unpaid toggle and unpaid/paid totals
+- **Savings goals** — named goals (e.g. "Japan 2027") with dated contributions, this-month/last-month/total rollups, and an optional target with progress
+- **Dashboard** — income/expenses/savings/budget/balance stat cards, month-carryover cash flow (start/end balance, debt, savings vs last month), wallet balances snapshot, today & weekly spending, top categories, highest/lowest expense, average daily spend, savings rate; category doughnut, monthly expenses line, income-vs-expenses bar, weekly spending bar; recent activity; budget alerts at 50/75/90/100% surfaced as toasts
 - **Analytics** — weekly/monthly/yearly/custom-range views: spending trend, income growth, cash flow, category breakdown, budget utilization
 - **Reports** — monthly, yearly, and category reports as JSON, CSV, Excel, or PDF (`/api/reports/*`)
 - **UI** — responsive (sidebar → drawer on mobile), dark mode, skeleton loaders, toasts, confirmation dialogs, empty states, error pages, smooth transitions
@@ -22,7 +26,7 @@ Built from [project-spec.md](project-spec.md).
 |---|---|
 | Frontend | Vue 3 (Composition API), Vite, Pinia, Vue Router, Tailwind CSS v4, Chart.js (vue-chartjs), Axios |
 | Backend | Node.js, Express, Prisma ORM, Zod validation, JWT (jsonwebtoken), bcryptjs, ExcelJS, PDFKit, swagger-ui-express |
-| Database | SQLite (development) / PostgreSQL (Docker) |
+| Database | PostgreSQL (Supabase in development; tests use an isolated `tests` schema) |
 | Testing | Vitest + Supertest (API), Vitest + Vue Test Utils (components/stores) |
 
 ## Getting started
@@ -57,7 +61,7 @@ npm run dev                   # app on http://localhost:5173 (proxies /api to :4
 
 | Variable | Purpose | Default |
 |---|---|---|
-| `DATABASE_URL` | Prisma connection string | `file:./dev.db` |
+| `DATABASE_URL` | Prisma connection string (Postgres; add `?connection_limit=8` when using Supabase's session pooler, which caps at 15 clients) | — |
 | `JWT_SECRET` | Signs 15-minute access tokens | — |
 | `JWT_REFRESH_SECRET` | Signs 7-day refresh tokens | — |
 | `PORT` | API port | `4000` |
@@ -68,7 +72,7 @@ The frontend needs no env vars in development (Vite proxy). For a custom API hos
 ## Tests
 
 ```bash
-cd backend && npm test      # 57 API tests (isolated SQLite test db)
+cd backend && npm test      # 100 API tests (isolated `tests` schema on the Postgres DATABASE_URL)
 cd frontend && npm test     # component + store tests
 ```
 
@@ -103,10 +107,10 @@ frontend/
     components/      ui/ (buttons, modals, table, toasts…), charts/, expense form & filters
     composables/     useDebounce
     layouts/         AppLayout (sidebar + topbar), AuthLayout
-    pages/           Dashboard, Expenses, Income, Budgets, Analytics, Profile, auth, 404/500
+    pages/           Dashboard, Expenses, Income, Budgets, Wallets, Debts, Savings, Analytics, Profile, auth, 404/500
     router/          routes + auth guards
     services/        axios instance with token refresh
-    stores/          Pinia stores (auth, ui, expenses, income, budgets, dashboard, analytics)
+    stores/          Pinia stores (auth, ui, expenses, income, budgets, wallets, debts, savings, dashboard, analytics)
     utils/           formatters, category metadata
 docker-compose.yml   postgres + backend + frontend (nginx)
 ```
@@ -118,6 +122,10 @@ Full interactive docs at `http://localhost:4000/api/docs`. Highlights:
 - `POST /api/auth/register | login | refresh | logout | forgot-password`, `GET /api/auth/me`, `PUT /api/auth/profile`
 - `GET/POST /api/expenses`, `GET/PUT/DELETE /api/expenses/:id`, `POST /api/expenses/:id/duplicate`, `GET /api/expenses/export?format=csv|xlsx`
 - `GET/POST /api/income`, `PUT/DELETE /api/income/:id`
+- `GET /api/wallets` (computed balances), `POST /api/wallets`, `PUT/DELETE /api/wallets/:id`
+- `GET/POST /api/transfers`, `PUT/DELETE /api/transfers/:id`
+- `GET/POST /api/debts`, `PUT/DELETE /api/debts/:id` (PUT toggles paid)
+- `GET/POST /api/savings-goals`, `PUT/DELETE /api/savings-goals/:id`, `POST /api/savings-goals/:id/contributions`, `DELETE /api/savings-goals/:id/contributions/:cid`
 - `GET /api/budgets?month=YYYY-MM` (with computed progress), `POST /api/budgets`, `PUT/DELETE /api/budgets/:id`
 - `GET /api/dashboard?month=YYYY-MM`, `GET /api/analytics?granularity=week|month|year`
 - `GET /api/reports/monthly | yearly | categories` with `format=json|csv|xlsx|pdf`

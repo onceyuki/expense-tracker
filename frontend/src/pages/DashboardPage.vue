@@ -14,6 +14,8 @@ import DoughnutChart from '../components/charts/DoughnutChart.vue';
 import LineChart from '../components/charts/LineChart.vue';
 import BarChart from '../components/charts/BarChart.vue';
 import ExpenseFormModal from '../components/ExpenseFormModal.vue';
+import CashFlowCard from '../components/CashFlowCard.vue';
+import WalletBalancesCard from '../components/WalletBalancesCard.vue';
 
 const dashboard = useDashboardStore();
 const expenses = useExpensesStore();
@@ -96,6 +98,14 @@ onMounted(load);
         <p class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Lowest expense</p>
         <p class="amount mt-1 text-lg font-semibold">{{ d?.stats.lowestExpense != null ? formatMoney(d.stats.lowestExpense) : '—' }}</p>
       </BaseCard>
+    </div>
+
+    <!-- Cash flow + wallets -->
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <SkeletonLoader v-if="dashboard.loading || !d" variant="card" />
+      <CashFlowCard v-else :cash-flow="d.cashFlow" />
+      <SkeletonLoader v-if="dashboard.loading || !d" variant="card" />
+      <WalletBalancesCard v-else :wallets="d.wallets" />
     </div>
 
     <!-- Charts -->

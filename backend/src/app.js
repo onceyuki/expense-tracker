@@ -10,6 +10,10 @@ import expenseRoutes from './routes/expenseRoutes.js';
 import incomeRoutes from './routes/incomeRoutes.js';
 import budgetRoutes from './routes/budgetRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
+import walletRoutes from './routes/walletRoutes.js';
+import transferRoutes from './routes/transferRoutes.js';
+import debtRoutes from './routes/debtRoutes.js';
+import savingsRoutes from './routes/savingsRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 
@@ -29,6 +33,10 @@ export function createApp() {
   app.use('/api/income', incomeRoutes);
   app.use('/api/budgets', budgetRoutes);
   app.use('/api/categories', categoryRoutes);
+  app.use('/api/wallets', walletRoutes);
+  app.use('/api/transfers', transferRoutes);
+  app.use('/api/debts', debtRoutes);
+  app.use('/api/savings-goals', savingsRoutes);
   app.use('/api', dashboardRoutes);
   app.use('/api/reports', reportRoutes);
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));

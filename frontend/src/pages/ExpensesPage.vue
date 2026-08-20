@@ -32,7 +32,7 @@ const columns = [
   { key: 'title', label: 'Title', sortable: true },
   { key: 'category', label: 'Category', sortable: true },
   { key: 'amount', label: 'Amount', sortable: true, align: 'right', class: 'amount font-semibold' },
-  { key: 'paymentMethod', label: 'Payment' },
+  { key: 'wallet', label: 'Wallet' },
   { key: 'notes', label: 'Notes', class: 'max-w-[160px] truncate text-slate-500' },
   { key: 'actions', label: '', align: 'right' },
 ];
@@ -170,6 +170,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
             </span>
           </template>
           <template #cell-amount="{ value }">{{ formatMoney(value) }}</template>
+          <template #cell-wallet="{ row }">{{ row.wallet?.name ?? '—' }}</template>
           <template #cell-notes="{ value }">
             <span :title="value">{{ value || '—' }}</span>
           </template>
@@ -252,8 +253,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
           <dd><span class="rounded-full px-2.5 py-0.5 text-xs font-semibold" :style="categoryChipStyle(categories.colorOf(viewing.category))">{{ viewing.category }}</span></dd>
         </div>
         <div class="flex justify-between gap-4">
-          <dt class="font-semibold text-slate-500">Payment method</dt>
-          <dd>{{ viewing.paymentMethod }}</dd>
+          <dt class="font-semibold text-slate-500">Wallet</dt>
+          <dd>{{ viewing.wallet?.name ?? '—' }}</dd>
         </div>
         <div v-if="viewing.notes" class="flex justify-between gap-4">
           <dt class="font-semibold text-slate-500">Notes</dt>

@@ -17,6 +17,9 @@ const nav = [
   { name: 'expenses', label: 'Expenses', icon: 'wallet', to: '/expenses' },
   { name: 'income', label: 'Income', icon: 'trending-up', to: '/income' },
   { name: 'budgets', label: 'Budgets', icon: 'target', to: '/budgets' },
+  { name: 'wallets', label: 'Wallets', icon: 'credit-card', to: '/wallets' },
+  { name: 'debts', label: 'Debts', icon: 'scale', to: '/debts' },
+  { name: 'savings', label: 'Savings', icon: 'coins', to: '/savings' },
   { name: 'categories', label: 'Categories', icon: 'tag', to: '/categories' },
   { name: 'analytics', label: 'Analytics', icon: 'chart', to: '/analytics' },
 ];
@@ -50,7 +53,7 @@ async function logout() {
         <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 font-mono text-sm font-semibold text-white">
           L
         </div>
-        <span class="text-lg font-bold tracking-tight">Ledgerly</span>
+        <span class="text-lg font-bold tracking-tight">Why Am I Like This (Financially)</span>
         <button
           class="ml-auto rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden"
           aria-label="Close menu"

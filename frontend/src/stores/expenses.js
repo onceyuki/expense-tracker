@@ -4,7 +4,7 @@ import { api, downloadFile } from '../services/api.js';
 const defaultFilters = () => ({
   search: '',
   category: '',
-  paymentMethod: '',
+  walletId: '',
   dateFrom: '',
   dateTo: '',
   minAmount: '',

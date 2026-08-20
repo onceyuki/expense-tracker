@@ -53,10 +53,11 @@ export async function monthly(req, res, next) {
         { key: 'title', header: 'Title' },
         { key: 'category', header: 'Category' },
         { key: 'amount', header: 'Amount' },
-        { key: 'paymentMethod', header: 'Payment Method' },
+        { key: 'wallet', header: 'Wallet' },
       ],
       rows: report.transactions.map((t) => ({
         ...t,
+        wallet: t.wallet?.name ?? '',
         date: t.date.toISOString().slice(0, 10),
         amount: money(t.amount),
       })),

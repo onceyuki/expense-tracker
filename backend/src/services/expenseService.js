@@ -1,6 +1,9 @@
 import { prisma } from '../utils/prisma.js';
 import { ApiError } from '../utils/ApiError.js';
 import { assertCategoryExists } from './categoryService.js';
+import { assertWalletExists } from './walletService.js';
+
+const walletSelect = { wallet: { select: { id: true, name: true, color: true } } };
 
 // Shared by list and export so exported files honor the active filters.
 export function buildWhere(userId, query) {
@@ -8,12 +11,12 @@ export function buildWhere(userId, query) {
 
   if (query.search) {
     where.OR = [
-      { title: { contains: query.search } },
-      { notes: { contains: query.search } },
+      { title: { contains: query.search, mode: 'insensitive' } },
+      { notes: { contains: query.search, mode: 'insensitive' } },
     ];
   }
   if (query.category) where.category = query.category;
-  if (query.paymentMethod) where.paymentMethod = query.paymentMethod;
+  if (query.walletId) where.walletId = query.walletId;
   if (query.dateFrom || query.dateTo) {
     where.date = {};
     if (query.dateFrom) where.date.gte = new Date(query.dateFrom);
@@ -41,6 +44,7 @@ export async function listExpenses(userId, query) {
   const [items, total] = await Promise.all([
     prisma.expense.findMany({
       where,
+      include: walletSelect,
       orderBy: { [sortBy]: sortDir },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -54,29 +58,34 @@ export async function listExpenses(userId, query) {
 export async function listAllForExport(userId, query) {
   return prisma.expense.findMany({
     where: buildWhere(userId, query),
+    include: walletSelect,
     orderBy: { date: 'desc' },
   });
 }
 
 export async function getExpense(userId, id) {
-  const expense = await prisma.expense.findFirst({ where: { id, userId } });
+  const expense = await prisma.expense.findFirst({ where: { id, userId }, include: walletSelect });
   if (!expense) throw new ApiError(404, 'Expense not found');
   return expense;
 }
 
 export async function createExpense(userId, data) {
   await assertCategoryExists(userId, data.category);
+  await assertWalletExists(userId, data.walletId);
   return prisma.expense.create({
     data: { ...data, userId, date: new Date(data.date) },
+    include: walletSelect,
   });
 }
 
 export async function updateExpense(userId, id, data) {
   await getExpense(userId, id);
   await assertCategoryExists(userId, data.category);
+  await assertWalletExists(userId, data.walletId);
   return prisma.expense.update({
     where: { id },
     data: { ...data, date: data.date ? new Date(data.date) : undefined },
+    include: walletSelect,
   });
 }
 
@@ -93,9 +102,10 @@ export async function duplicateExpense(userId, id) {
       title: source.title,
       amount: source.amount,
       category: source.category,
-      paymentMethod: source.paymentMethod,
+      walletId: source.walletId,
       notes: source.notes,
       date: new Date(),
     },
+    include: walletSelect,
   });
 }

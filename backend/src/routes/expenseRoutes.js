@@ -3,7 +3,6 @@ import { z } from 'zod';
 import * as expenseController from '../controllers/expenseController.js';
 import { validate } from '../middleware/validate.js';
 import { requireAuth } from '../middleware/auth.js';
-import { PAYMENT_METHODS } from '../utils/constants.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -12,7 +11,7 @@ const expenseBody = z.object({
   title: z.string().min(1).max(200),
   amount: z.number().positive(),
   category: z.string().trim().min(1).max(40),
-  paymentMethod: z.enum(PAYMENT_METHODS),
+  walletId: z.string().min(1).nullable().optional(),
   notes: z.string().max(1000).nullable().optional(),
   date: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
 });
@@ -20,7 +19,7 @@ const expenseBody = z.object({
 export const filterQuery = z.object({
   search: z.string().optional(),
   category: z.string().trim().min(1).max(40).optional(),
-  paymentMethod: z.enum(PAYMENT_METHODS).optional(),
+  walletId: z.string().min(1).optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
   minAmount: z.coerce.number().optional(),

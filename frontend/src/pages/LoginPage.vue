@@ -59,7 +59,7 @@ async function sendReset() {
 </script>
 
 <template>
-  <AuthLayout title="Welcome back" subtitle="Sign in to your Ledgerly account">
+  <AuthLayout title="Welcome back" subtitle="Sign in to your Why Am I Like This (Financially) account">
     <form class="space-y-4" novalidate @submit.prevent="submit">
       <BaseInput
         v-model="form.email"
@@ -111,7 +111,7 @@ async function sendReset() {
     </form>
 
     <template #footer>
-      New to Ledgerly?
+      New to Why Am I Like This (Financially)?
       <RouterLink to="/register" class="font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400">
         Create an account
       </RouterLink>

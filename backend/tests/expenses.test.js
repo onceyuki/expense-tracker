@@ -2,9 +2,11 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { createTestUser } from './helpers.js';
+import { prisma } from '../src/utils/prisma.js';
 
 const app = createApp();
 let token;
+let user;
 let otherToken;
 
 function post(body) {
@@ -15,13 +17,12 @@ const base = {
   title: 'Groceries',
   amount: 54.2,
   category: 'Food',
-  paymentMethod: 'Credit Card',
   date: '2026-07-01T10:00:00.000Z',
   notes: 'weekly shop',
 };
 
 beforeAll(async () => {
-  ({ token } = await createTestUser(app, 'expenses@test.com', 'Test User', [
+  ({ token, user } = await createTestUser(app, 'expenses@test.com', 'Test User', [
     'Food', 'Transportation', 'Entertainment', 'Utilities', 'Shopping',
   ]));
   ({ token: otherToken } = await createTestUser(app, 'expenses-other@test.com'));
@@ -40,6 +41,7 @@ describe('expenses CRUD', () => {
     expect(res.status).toBe(201);
     expect(res.body.expense.title).toBe('Groceries');
     expect(res.body.expense.amount).toBe(54.2);
+    expect(res.body.expense.wallet).toBeNull();
     created = res.body.expense;
   });
 
@@ -95,14 +97,17 @@ describe('expenses CRUD', () => {
 });
 
 describe('expenses list: search, filter, sort, paginate, export', () => {
+  let gcash;
+
   beforeAll(async () => {
+    gcash = await prisma.wallet.create({ data: { userId: user.id, name: 'GCash' } });
     // fixture set: distinct categories, amounts, dates
     const rows = [
-      { title: 'Coffee beans', amount: 15, category: 'Food', paymentMethod: 'Cash', date: '2026-06-01T09:00:00.000Z' },
-      { title: 'Bus pass', amount: 40, category: 'Transportation', paymentMethod: 'Debit Card', date: '2026-06-05T09:00:00.000Z' },
-      { title: 'Concert', amount: 120, category: 'Entertainment', paymentMethod: 'Credit Card', date: '2026-06-10T09:00:00.000Z', notes: 'front row' },
-      { title: 'Electric bill', amount: 85, category: 'Utilities', paymentMethod: 'Bank Transfer', date: '2026-07-02T09:00:00.000Z' },
-      { title: 'New shoes', amount: 95, category: 'Shopping', paymentMethod: 'Credit Card', date: '2026-07-05T09:00:00.000Z' },
+      { title: 'Coffee beans', amount: 15, category: 'Food', date: '2026-06-01T09:00:00.000Z' },
+      { title: 'Bus pass', amount: 40, category: 'Transportation', date: '2026-06-05T09:00:00.000Z' },
+      { title: 'Concert', amount: 120, category: 'Entertainment', date: '2026-06-10T09:00:00.000Z', notes: 'front row', walletId: gcash.id },
+      { title: 'Electric bill', amount: 85, category: 'Utilities', date: '2026-07-02T09:00:00.000Z' },
+      { title: 'New shoes', amount: 95, category: 'Shopping', date: '2026-07-05T09:00:00.000Z' },
     ];
     for (const row of rows) await post(row);
   });
@@ -127,13 +132,14 @@ describe('expenses list: search, filter, sort, paginate, export', () => {
     expect(byNotes.body.items[0].title).toBe('Concert');
   });
 
-  it('filters by category, payment method, date range, amount range', async () => {
+  it('filters by category, wallet, date range, amount range', async () => {
     const cat = await list({ category: 'Utilities' });
     expect(cat.body.items.every((e) => e.category === 'Utilities')).toBe(true);
     expect(cat.body.items.length).toBe(1);
 
-    const pay = await list({ paymentMethod: 'Credit Card' });
-    expect(pay.body.items.every((e) => e.paymentMethod === 'Credit Card')).toBe(true);
+    const byWallet = await list({ walletId: gcash.id });
+    expect(byWallet.body.items.length).toBe(1);
+    expect(byWallet.body.items[0].wallet.name).toBe('GCash');
 
     const dates = await list({ dateFrom: '2026-07-01', dateTo: '2026-07-31' });
     expect(dates.body.items.every((e) => e.date >= '2026-07-01')).toBe(true);
